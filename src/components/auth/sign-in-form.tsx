@@ -19,8 +19,8 @@ const signInSchema = z.object({
 type SignInValues = z.infer<typeof signInSchema>;
 
 export function SignInForm() {
-  const { signIn } = useSignIn();
-  const { isLoaded, isSignedIn } = useAuth();
+  const { signIn, errors: clerkErrors } = useSignIn();
+  const { isLoaded } = useAuth();
   const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -34,20 +34,13 @@ export function SignInForm() {
     mode: "onChange",
   });
 
-  // Redirect if already signed in
-  useEffect(() => {
-    if (isSignedIn) {
-      router.push("/dashboard");
-    }
-  }, [isSignedIn, router]);
-
   const onSubmit = async (values: SignInValues) => {
-    if (!signIn) return;
+    if (!isLoaded || !signIn) return;
     setServerError(null);
     setIsSubmitting(true);
 
     try {
-      const { error } = await signIn.create({
+      const { error } = await signIn.password({
         identifier: values.email,
         password: values.password,
       });
@@ -57,18 +50,20 @@ export function SignInForm() {
         return;
       }
 
-      // If we get here, sign-in was initiated. Check the status.
-      // The signal will update reactively, so we check signIn.status.
+      // If sign-in successful, finalize
       if (signIn.status === "complete") {
-        await signIn.finalize();
-        router.push("/dashboard");
+        await signIn.finalize({
+          navigate: (url) => {
+            const urlString = typeof url === "string" ? url : "/dashboard";
+            router.push(urlString);
+            return Promise.resolve();
+          },
+        });
         return;
       }
 
-      // If status isn't complete yet but no error, the session
-      // may have been created (e.g. email verification pending).
-      // Just redirect — Clerk middleware will handle auth.
-      router.push("/dashboard");
+      // Handle other statuses if needed
+      setServerError("Sign-in incomplete. Please try again.");
     } catch (err: any) {
       setServerError(err.errors?.[0]?.message || err.message || "Something went wrong. Please try again.");
     } finally {

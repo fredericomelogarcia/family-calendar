@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSignUp } from "@clerk/nextjs";
+import { useAuth, useSignUp } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -9,7 +9,7 @@ import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Envelope, LockKey, CheckCircle } from "@phosphor-icons/react";
+import { Envelope, LockKey } from "@phosphor-icons/react";
 import Link from "next/link";
 
 const signUpSchema = z.object({
@@ -28,7 +28,8 @@ type SignUpValues = z.infer<typeof signUpSchema>;
 type VerificationValues = z.infer<typeof verificationCodeSchema>;
 
 export function SignUpForm() {
-  const { signUp, isLoaded, setActive } = useSignUp();
+  const { signUp, errors: clerkErrors } = useSignUp();
+  const { isLoaded } = useAuth();
   const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -42,7 +43,7 @@ export function SignUpForm() {
     handleSubmit,
     control,
     watch,
-    formState: { errors },
+    formState: { errors, isValid },
   } = useForm<SignUpValues>({
     resolver: zodResolver(signUpSchema),
     mode: "onChange",
@@ -61,7 +62,6 @@ export function SignUpForm() {
   });
 
   const acceptTerms = watch("acceptTerms");
-  const isValid = Object.keys(errors).length === 0 && acceptTerms;
 
   // Countdown timer for resending code
   useEffect(() => {
@@ -80,35 +80,41 @@ export function SignUpForm() {
     setIsSubmitting(true);
 
     try {
-      // Create the sign-up
-      const result = await signUp.create({
+      // Create the sign-up with password
+      const { error } = await signUp.password({
         emailAddress: values.email,
         password: values.password,
         firstName: values.firstName,
         lastName: values.lastName,
       });
 
-      if (result.status === "complete") {
-        // Email verification is not required, complete the sign-up
-        await setActive({ session: result.createdSessionId });
-        router.push("/dashboard");
+      if (error) {
+        setServerError(error.message || "An error occurred during sign up");
+        setIsSubmitting(false);
         return;
       }
 
-      if (result.status === "missing_requirements") {
-        // Check if email verification is needed
-        const missingEmailVerification = result.requiredFields?.includes("email_address") ||
-          result.unverifiedFields?.includes("email_address");
+      // Check status after password sign-up
+      if (signUp.status === "complete") {
+        // Sign-up complete, finalize and redirect
+        await signUp.finalize({
+          navigate: (url) => {
+            const urlString = typeof url === "string" ? url : "/dashboard";
+            router.push(urlString);
+            return Promise.resolve();
+          },
+        });
+        return;
+      }
 
-        if (missingEmailVerification) {
-          // Prepare email verification
-          await signUp.prepareEmailAddressVerification({
-            strategy: "email_code",
-          });
+      if (signUp.status === "missing_requirements") {
+        // Check if email verification is needed
+        if (signUp.unverifiedFields.includes("email_address")) {
+          // Send verification code
+          await signUp.verifications.sendEmailCode();
           
           setVerificationEmail(values.email);
           setPendingVerification(true);
-          return;
         }
       }
     } catch (err: any) {
@@ -125,14 +131,25 @@ export function SignUpForm() {
 
     try {
       // Attempt to verify the email code
-      const result = await signUp.attemptEmailAddressVerification({
+      const { error } = await signUp.verifications.verifyEmailCode({
         code: values.code,
       });
 
-      if (result.status === "complete") {
-        // Verification successful, activate the session
-        await setActive({ session: result.createdSessionId });
-        router.push("/dashboard");
+      if (error) {
+        setServerError(error.message || "Invalid verification code. Please try again.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (signUp.status === "complete") {
+        // Verification successful, finalize sign-up
+        await signUp.finalize({
+          navigate: (url) => {
+            const urlString = typeof url === "string" ? url : "/dashboard";
+            router.push(urlString);
+            return Promise.resolve();
+          },
+        });
         return;
       }
 
@@ -151,9 +168,7 @@ export function SignUpForm() {
     setServerError(null);
 
     try {
-      await signUp.prepareEmailAddressVerification({
-        strategy: "email_code",
-      });
+      await signUp.verifications.sendEmailCode();
       setResendTimer(60);
     } catch (err: any) {
       setServerError(err.errors?.[0]?.message || "Failed to resend code. Please try again.");
@@ -302,6 +317,9 @@ export function SignUpForm() {
             {serverError}
           </div>
         )}
+
+        {/* Clerk CAPTCHA container - required for bot protection */}
+        <div id="clerk-captcha" className="flex justify-center min-h-[76px]" />
 
         <Button type="submit" className="w-full" loading={isSubmitting} disabled={!isValid || isSubmitting}>
           Create Account

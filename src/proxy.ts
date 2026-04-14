@@ -19,7 +19,7 @@ export const proxy = clerkMiddleware((auth, request) => {
 
 export const config = {
   matcher: [
-    // Skip all internal paths (_next) and static files
-    '/((?!_next|[^s]*\\.(?:sitemap\\.xml|robots\\.txt|favicon\\.ico|svg|png|jpg|jpeg|gif|webp|ico)).*)',
+    // Skip all internal paths (_next), static files, and well-known endpoints
+    '/((?!_next|\.well-known|[^s]*\\.(?:sitemap\\.xml|robots\\.txt|favicon\\.ico|svg|png|jpg|jpeg|gif|webp|ico)).*)',
   ],
 };

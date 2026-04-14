@@ -233,3 +233,13 @@ h1, h2, h3, h4, h5, h6 {
 .safe-area-bottom {
   padding-bottom: env(safe-area-inset-bottom, 20px);
 }
+
+/* Clerk CAPTCHA widget styling */
+#clerk-captcha {
+  width: 100%;
+  min-height: 76px;
+}
+
+#clerk-captcha iframe {
+  border-radius: var(--radius-md);
+}
