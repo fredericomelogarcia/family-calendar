@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useClerk, useUser } from "@clerk/nextjs";
+import { useClerk, useUser, Show } from "@clerk/nextjs";
+import { CheckoutButton } from "@clerk/nextjs/experimental";
 import { Heart, Check, ArrowCounterClockwise } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { showToast } from "@/components/ui/toast";
@@ -29,9 +30,12 @@ interface PlanCardProps {
   isCurrentPlan: boolean;
   isPendingCancellation: boolean;
   isDefault: boolean;
+  planId?: string;
+  planPeriod?: "month" | "annual";
   onSubscribe?: () => void;
   onCancel?: () => void;
   isLoading: boolean;
+  onSubscriptionComplete?: () => void;
 }
 
 function PlanCard({
@@ -44,11 +48,15 @@ function PlanCard({
   isCurrentPlan,
   isPendingCancellation,
   isDefault,
+  planId,
+  planPeriod,
   onSubscribe,
   onCancel,
   isLoading,
+  onSubscriptionComplete,
 }: PlanCardProps) {
   const isFree = price === 0 || price === null;
+  const canCheckout = planId && planPeriod && !isDefault && !isCurrentPlan;
 
   return (
     <div
@@ -151,12 +159,29 @@ function PlanCard({
           <div className="py-2.5 px-4 text-center text-sm font-medium text-text-tertiary rounded-[--radius-lg] border border-border">
             Current plan
           </div>
+        ) : canCheckout ? (
+          <Show when="signed-in">
+            <CheckoutButton
+              planId={planId}
+              planPeriod={planPeriod}
+              onSubscriptionComplete={onSubscriptionComplete}
+              newSubscriptionRedirectUrl="/support"
+            >
+              <Button
+                variant="primary"
+                size="md"
+                className="w-full"
+              >
+                <Heart size={16} weight="fill" />
+                Support Zawly Calendar
+              </Button>
+            </CheckoutButton>
+          </Show>
         ) : (
           <Button
             variant="primary"
             size="md"
-            onClick={onSubscribe}
-            loading={isLoading}
+            disabled
             className="w-full"
           >
             <Heart size={16} weight="fill" />
@@ -169,7 +194,7 @@ function PlanCard({
 }
 
 export function CustomPricingTable() {
-  const { isLoaded } = useUser();
+  const { isLoaded, user } = useUser();
   const clerk = useClerk();
   const [isLoading, setIsLoading] = useState(false);
   const [plans, setPlans] = useState<PlanData[]>([]);
@@ -269,73 +294,15 @@ export function CustomPricingTable() {
     }
   }, [isLoaded, fetchData]);
 
-  const handleSubscribe = async (planId: string, period: "month" | "annual") => {
-    setIsLoading(true);
-    try {
-      if (!clerk.user) {
-        showToast("error", "Please sign in to subscribe.");
-        return;
-      }
+  const handleSubscriptionComplete = () => {
+    fetchData();
+    showToast("success", "Thank you for supporting Zawly Calendar! 💚");
+  };
 
-      const checkout = await clerk.billing.startCheckout({
-        planId,
-        planPeriod: period,
-      });
-
-      console.log("Checkout:", checkout);
-
-      if (checkout.status === "completed") {
-        await fetchData();
-        showToast("success", "Thank you for supporting Zawly Calendar! 💚");
-        return;
-      }
-
-      if (checkout.status === "needs_confirmation") {
-        if (!checkout.needsPaymentMethod) {
-          await checkout.confirm({});
-          await fetchData();
-          showToast("success", "Thank you for supporting Zawly Calendar! 💚");
-          return;
-        }
-
-        // Payment method required - try test card or show error
-        try {
-          const confirmed = await checkout.confirm({ 
-            useTestCard: true,
-            gateway: "stripe"
-          });
-          console.log("Confirmed:", confirmed);
-          await fetchData();
-          showToast("success", pendingCancellation 
-            ? "Welcome back! 💚" 
-            : "Thank you for your support! 💚"
-          );
-        } catch (err: any) {
-          console.error("Payment failed - full error:", JSON.stringify(err, null, 2));
-          console.error("Error details:", err?.errors);
-          
-          // Check if it's a configuration error
-          const errorCode = err?.errors?.[0]?.code;
-          const errorMessage = err?.errors?.[0]?.message || err?.message;
-          
-          console.log("Error code:", errorCode);
-          console.log("Error message:", errorMessage);
-          
-          if (errorCode?.includes("configuration") || errorMessage?.toLowerCase().includes("configuration")) {
-            showToast("error", "Billing configuration error. Please check: 1) Stripe is connected in Clerk Dashboard, 2) Your plan has a valid price, 3) You're using test mode if using test cards.");
-          } else if (errorMessage?.includes("test")) {
-            showToast("error", "Live mode detected. Test cards only work in test mode. Please use a real card or switch to test mode in Clerk Dashboard.");
-          } else {
-            showToast("error", errorMessage || "Payment failed. Please try again.");
-          }
-        }
-      }
-    } catch (error: any) {
-      console.error("Checkout error:", error);
-      showToast("error", error?.errors?.[0]?.message || "Checkout failed.");
-    } finally {
-      setIsLoading(false);
-    }
+  const handleResubscribe = async (planId: string, period: "month" | "annual") => {
+    // Use CheckoutButton for resubscribe as well
+    // This will be handled by the CheckoutButton component
+    console.log("Resubscribing to plan:", planId, period);
   };
 
   const handleCancel = async () => {
@@ -389,13 +356,16 @@ export function CustomPricingTable() {
           isCurrentPlan={subscribedPlanId === plan.id || (plan.isDefault && !subscribedPlanId)}
           isPendingCancellation={subscribedPlanId === plan.id && pendingCancellation}
           isDefault={plan.isDefault}
+          planId={plan.id}
+          planPeriod={plan.period || undefined}
           onSubscribe={
-            plan.isRecurring
-              ? () => handleSubscribe(plan.id, plan.period || "month")
+            plan.isRecurring && subscribedPlanId === plan.id && pendingCancellation
+              ? () => handleResubscribe(plan.id, plan.period || "month")
               : undefined
           }
           onCancel={subscribedPlanId === plan.id ? handleCancel : undefined}
           isLoading={isLoading}
+          onSubscriptionComplete={handleSubscriptionComplete}
         />
       ))}
     </div>

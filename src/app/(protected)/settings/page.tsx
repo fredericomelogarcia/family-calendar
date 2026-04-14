@@ -549,9 +549,6 @@ export default function SettingsPage() {
                 {user?.emailAddresses?.[0]?.emailAddress || "No email"}
               </p>
             </div>
-            <span className="text-xs text-text-tertiary px-2 py-1 bg-surface-alt rounded-[--radius-sm]">
-              Cannot be changed
-            </span>
           </div>
 
           {/* Change Password Row */}
