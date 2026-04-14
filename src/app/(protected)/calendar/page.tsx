@@ -138,7 +138,10 @@ export default function CalendarPage() {
     if (!deletingEvent) return;
     setDeleteLoading(true);
     try {
-      const dateStr = format(deletingEvent.startDate, "yyyy-MM-dd");
+      // Use the selected date (the occurrence the user clicked on), not the event's original startDate.
+      // For recurring events, startDate is always the first occurrence, but the user
+      // may be deleting a later occurrence.
+      const dateStr = format(selectedDate, "yyyy-MM-dd");
       let url = `/api/events?id=${deletingEvent.id}&date=${dateStr}`;
       if (deleteAll) url += "&deleteAll=true";
       const res = await fetch(url, { method: "DELETE" });

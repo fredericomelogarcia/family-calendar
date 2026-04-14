@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Nunito, Inter, JetBrains_Mono } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import { AuthProvider } from "./providers";
 import { ThemeProvider } from "@/lib/theme";
@@ -88,6 +90,8 @@ export default function RootLayout({
           <ToastContainer />
         </ThemeProvider>
         </AuthProvider>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

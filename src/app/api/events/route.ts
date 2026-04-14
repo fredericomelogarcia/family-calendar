@@ -199,8 +199,47 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ success: true, excludedDates });
     }
 
-    // Full delete (non-recurring, or "delete all" on recurring)
-    // Delete event
+    if (isRecurring && deleteAll && dateStr) {
+      // "Delete this and future events" on a recurring event:
+      // Instead of deleting the entire event, set the endDate to the day before
+      // the clicked occurrence. This preserves all past occurrences.
+      const occurrenceDate = new Date(dateStr + "T00:00:00");
+      const eventStart = new Date(existingEvent.startDate);
+
+      // Strip time from eventStart for comparison
+      const eventStartDay = new Date(eventStart.getFullYear(), eventStart.getMonth(), eventStart.getDate());
+      const occurrenceDay = new Date(occurrenceDate.getFullYear(), occurrenceDate.getMonth(), occurrenceDate.getDate());
+
+      // If the occurrence date is the same as or before the start date,
+      // there are no past occurrences to preserve — delete the whole event.
+      if (occurrenceDay <= eventStartDay) {
+        await db.delete(events).where(eq(events.id, id));
+        return NextResponse.json({ success: true });
+      }
+
+      // Set endDate to the day before the clicked occurrence.
+      // This preserves all occurrences before the clicked date.
+      const newEndDate = new Date(occurrenceDate);
+      newEndDate.setDate(newEndDate.getDate() - 1);
+      // Set to end of that day
+      newEndDate.setHours(23, 59, 59, 999);
+
+      // Also remove any excluded dates that fall after newEndDate (they're now redundant)
+      const currentExcluded: string[] = (existingEvent.excludedDates as string[]) || [];
+      const cleanedExcluded = currentExcluded.filter(d => new Date(d) <= newEndDate);
+
+      await db.update(events)
+        .set({
+          endDate: newEndDate,
+          excludedDates: cleanedExcluded.length > 0 ? cleanedExcluded : null,
+          updatedAt: new Date(),
+        } as any)
+        .where(eq(events.id, id));
+
+      return NextResponse.json({ success: true, endDate: newEndDate.toISOString() });
+    }
+
+    // Full delete (non-recurring, or recurring with no date context)
     await db.delete(events).where(eq(events.id, id));
 
     return NextResponse.json({ success: true });
