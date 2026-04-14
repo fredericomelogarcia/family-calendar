@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* Famly Design System - Warm Modern */
+/* Zawly Calendar Design System - Warm Modern */
 :root {
   /* Colors */
   --background: #FAF9F7;
@@ -184,14 +184,6 @@ h1, h2, h3, h4, h5, h6 {
   opacity: 0.02;
   pointer-events: none;
 }
-
-/* Event color categories */
-.event-sage { background-color: #7C9A7E; }
-.event-terracotta { background-color: #C4857A; }
-.event-gold { background-color: #D4A853; }
-.event-blue { background-color: #6B8EC4; }
-.event-purple { background-color: #8B7CC4; }
-.event-coral { background-color: #E07B6C; }
 
 /* Animation utilities */
 @keyframes fade-in {

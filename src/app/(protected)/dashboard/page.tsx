@@ -5,13 +5,12 @@ import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { format, isSameDay, startOfDay, endOfDay, addDays } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, CalendarBlank, Clock, Users, Sparkle } from "@phosphor-icons/react";
+import { Plus, CalendarBlank, Users } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { EventCard } from "@/components/events/event-card";
 import { EventForm, EventFormData } from "@/components/events/event-form";
 import { DeleteEventModal } from "@/components/events/delete-event-modal";
 import { showToast } from "@/components/ui/toast";
-import { cn } from "@/lib/utils";
 import { isEventOnDay } from "@/lib/calendar-utils";
 
 interface Event {
@@ -20,7 +19,6 @@ interface Event {
   startDate: Date;
   endDate?: Date;
   allDay: boolean;
-  color: string;
   notes?: string;
   recurrence?: string;
   startTime?: string;
@@ -42,6 +40,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [showEventForm, setShowEventForm] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
+  const [occurrenceDate, setOccurrenceDate] = useState<Date | null>(null);
   const [deletingEvent, setDeletingEvent] = useState<Event | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
@@ -77,7 +76,7 @@ export default function DashboardPage() {
   const fetchEvents = async (start?: Date, end?: Date) => {
     try {
       const startDate = start || addDays(startOfDay(new Date()), -7);
-      const endDate = end || addDays(endOfDay(new Date()), 14);
+      const endDate = end || addDays(endOfDay(new Date()), 30);
       const res = await fetch(
         `/api/events?start=${startDate.toISOString()}&end=${endDate.toISOString()}`
       );
@@ -148,8 +147,13 @@ export default function DashboardPage() {
     }
   };
 
-  const handleEventClick = (event: Event) => {
+  const handleEventClick = (event: Event, clickedDate?: Date) => {
     setEditingEvent(event);
+    if (clickedDate) {
+      setOccurrenceDate(clickedDate);
+    } else {
+      setOccurrenceDate(selectedDate);
+    }
   };
 
   const handleDateSelect = (date: Date) => {
@@ -161,16 +165,35 @@ export default function DashboardPage() {
     isEventOnDay(event, selectedDate)
   );
 
-  // Get upcoming events (next 7 days, not today)
-  const upcomingEvents = events
-    .filter(event => {
-      const today = startOfDay(new Date());
-      for (let i = 1; i <= 7; i++) {
-        if (isEventOnDay(event, addDays(today, i))) return true;
+  // Get upcoming events — all occurrences from tomorrow through 30 days from today
+  const upcomingEvents: { event: Event; date: Date }[] = (() => {
+    const today = startOfDay(new Date());
+    const tomorrow = addDays(today, 1);
+    const rangeEnd = addDays(today, 30);
+    const result: { event: Event; date: Date }[] = [];
+    for (const event of events) {
+      const isRecurring = event.recurrence && event.recurrence !== "none";
+      const eventStart = startOfDay(new Date(event.startDate));
+
+      if (!isRecurring) {
+        if (eventStart >= tomorrow && eventStart <= rangeEnd) {
+          result.push({ event, date: new Date(eventStart) });
+        }
+        continue;
       }
-      return false;
-    })
-    .slice(0, 4);
+
+      // For recurring events, walk each day and collect all occurrences
+      let d = tomorrow;
+      while (d <= rangeEnd) {
+        if (isEventOnDay(event, d)) {
+          result.push({ event, date: new Date(d) });
+        }
+        d = addDays(d, 1);
+      }
+    }
+    result.sort((a, b) => a.date.getTime() - b.date.getTime());
+    return result;
+  })();
 
   if (!isLoaded || loading) {
     return (
@@ -282,14 +305,14 @@ export default function DashboardPage() {
           </h2>
           <div className="space-y-3">
             <AnimatePresence mode="popLayout">
-              {upcomingEvents.map((event, i) => (
+              {upcomingEvents.map(({ event, date }, i) => (
                 <motion.div
-                  key={event.id}
+                  key={`${event.id}-${date.toISOString()}`}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.05 }}
                 >
-                  <EventCard event={event} showDate onClick={() => handleEventClick(event)} />
+                  <EventCard event={event} showDate occurrenceDate={date} onClick={() => handleEventClick(event, date)} />
                 </motion.div>
               ))}
             </AnimatePresence>
@@ -318,14 +341,13 @@ export default function DashboardPage() {
           }}
           initialData={{
             title: editingEvent.title,
-            startDate: editingEvent.startDate,
+            startDate: occurrenceDate || editingEvent.startDate,
             endDate: editingEvent.endDate,
             allDay: editingEvent.allDay,
-            color: editingEvent.color,
             notes: editingEvent.notes,
             recurrence: (editingEvent.recurrence as any) || "none",
           }}
-          defaultDate={editingEvent.startDate}
+          defaultDate={occurrenceDate || editingEvent.startDate}
           mode="edit"
         />
       )}
@@ -422,7 +444,7 @@ function FamilySetup({ userId, onComplete }: { userId: string; onComplete: () =>
             <Users size={32} className="text-primary" />
           </div>
           <h2 className="text-xl font-bold font-[family-name:var(--font-heading)] text-text-primary">
-            Welcome to Famly! 👋
+            Welcome to Zawly Calendar! 👋
           </h2>
           <p className="text-sm text-text-secondary mt-2">
             Create or join a family to get started

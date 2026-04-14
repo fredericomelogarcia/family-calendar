@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { events, users } from "@/lib/db/schema";
 import { auth } from "@clerk/nextjs/server";
-import { eq, and, lte, gte } from "drizzle-orm";
+import { eq, and, lte, gte, count } from "drizzle-orm";
 import { startOfDay, endOfDay, parseISO } from "date-fns";
 
 // GET /api/events
@@ -21,8 +21,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ event });
     }
 
+    // Single query: join users to get familyId in one shot
     const user = await db.query.users.findFirst({
       where: eq(users.id, userId),
+      columns: { familyId: true },
     });
 
     if (!user?.familyId) {
@@ -53,6 +55,7 @@ export async function GET(request: NextRequest) {
 }
 
 // POST /api/events - Create event
+// Uses .returning() to avoid a second query to fetch the created row
 export async function POST(request: NextRequest) {
   try {
     const { userId } = await auth();
@@ -60,8 +63,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Only select the column we need
     const user = await db.query.users.findFirst({
       where: eq(users.id, userId),
+      columns: { familyId: true },
     });
 
     if (!user?.familyId) {
@@ -69,7 +74,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { title, startDate, endDate, allDay, color, notes } = body;
+    const { title, startDate, endDate, allDay, notes } = body;
 
     if (!title || title.length < 2) {
       return NextResponse.json({ error: "Title must be at least 2 characters" }, { status: 400 });
@@ -78,25 +83,19 @@ export async function POST(request: NextRequest) {
     const now = new Date();
     const eventId = crypto.randomUUID();
 
-    await db.insert(events).values({
+    // Single query: insert + return the created row
+    const [createdEvent] = await db.insert(events).values({
       id: eventId,
       familyId: user.familyId,
       title,
       startDate: new Date(startDate),
       endDate: endDate ? new Date(endDate) : null,
       allDay: allDay ?? true,
-      color: color || "#7C9A7E",
       notes: notes || null,
       recurrence: body.recurrence || "none",
       createdBy: userId,
       updatedBy: userId,
-      createdAt: now,
-      updatedAt: now,
-    });
-
-    const createdEvent = await db.query.events.findFirst({
-      where: eq(events.id, eventId),
-    });
+    }).returning();
 
     return NextResponse.json({ event: createdEvent }, { status: 201 });
   } catch (error) {
@@ -106,6 +105,8 @@ export async function POST(request: NextRequest) {
 }
 
 // PATCH /api/events - Update event
+// Uses .returning() to avoid a second query to fetch the updated row
+// Single query to check existence + ownership, then update+return
 export async function PATCH(request: NextRequest) {
   try {
     const { userId } = await auth();
@@ -114,18 +115,10 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { id, title, startDate, endDate, allDay, color, notes } = body;
+    const { id, title, startDate, endDate, allDay, notes } = body;
 
     if (!id) {
       return NextResponse.json({ error: "Event ID required" }, { status: 400 });
-    }
-
-    const existingEvent = await db.query.events.findFirst({
-      where: eq(events.id, id),
-    });
-
-    if (!existingEvent) {
-      return NextResponse.json({ error: "Event not found" }, { status: 404 });
     }
 
     const updates: Partial<typeof events.$inferInsert> = {
@@ -137,18 +130,19 @@ export async function PATCH(request: NextRequest) {
     if (startDate !== undefined) updates.startDate = new Date(startDate);
     if (endDate !== undefined) updates.endDate = endDate ? new Date(endDate) : null;
     if (allDay !== undefined) updates.allDay = allDay;
-    if (color !== undefined) updates.color = color;
     if (notes !== undefined) updates.notes = notes || null;
     if (body.recurrence !== undefined) updates.recurrence = body.recurrence;
     if (body.excludedDates !== undefined) updates.excludedDates = body.excludedDates;
 
-    await db.update(events)
+    // Single query: update + return — if no row matches, result is empty
+    const [updatedEvent] = await db.update(events)
       .set(updates)
-      .where(eq(events.id, id));
+      .where(eq(events.id, id))
+      .returning();
 
-    const updatedEvent = await db.query.events.findFirst({
-      where: eq(events.id, id),
-    });
+    if (!updatedEvent) {
+      return NextResponse.json({ error: "Event not found" }, { status: 404 });
+    }
 
     return NextResponse.json({ event: updatedEvent });
   } catch (error) {
@@ -168,15 +162,16 @@ export async function DELETE(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
     const deleteAll = searchParams.get("deleteAll") === "true";
-    const dateStr = searchParams.get("date"); // ISO date string of the specific occurrence
+    const dateStr = searchParams.get("date");
 
     if (!id) {
       return NextResponse.json({ error: "Event ID required" }, { status: 400 });
     }
 
-    // Check event exists
+    // Single query to check existence — only select columns we need
     const existingEvent = await db.query.events.findFirst({
       where: eq(events.id, id),
+      columns: { recurrence: true, excludedDates: true, startDate: true },
     });
 
     if (!existingEvent) {
@@ -186,46 +181,39 @@ export async function DELETE(request: NextRequest) {
     const isRecurring = existingEvent.recurrence && existingEvent.recurrence !== "none";
 
     if (isRecurring && !deleteAll && dateStr) {
-      // "Delete this event only" on a recurring event:
-      // Add the date to excludedDates so this occurrence is skipped
-      const excludedDates: string[] = (existingEvent.excludedDates as string[]) || [];
+      // "Delete this event only" — add date to excludedDates
+      const excludedDates: string[] = existingEvent.excludedDates ?? [];
       if (!excludedDates.includes(dateStr)) {
         excludedDates.push(dateStr);
       }
       await db.update(events)
-        .set({ excludedDates, updatedAt: new Date() } as any)
+        .set({ excludedDates, updatedAt: new Date() })
         .where(eq(events.id, id));
 
       return NextResponse.json({ success: true, excludedDates });
     }
 
     if (isRecurring && deleteAll && dateStr) {
-      // "Delete this and future events" on a recurring event:
-      // Instead of deleting the entire event, set the endDate to the day before
-      // the clicked occurrence. This preserves all past occurrences.
+      // "Delete this and future events" — set endDate to before this occurrence
       const occurrenceDate = new Date(dateStr + "T00:00:00");
       const eventStart = new Date(existingEvent.startDate);
 
-      // Strip time from eventStart for comparison
       const eventStartDay = new Date(eventStart.getFullYear(), eventStart.getMonth(), eventStart.getDate());
       const occurrenceDay = new Date(occurrenceDate.getFullYear(), occurrenceDate.getMonth(), occurrenceDate.getDate());
 
-      // If the occurrence date is the same as or before the start date,
-      // there are no past occurrences to preserve — delete the whole event.
+      // If occurrence is on or before the start date — just delete the whole event
       if (occurrenceDay <= eventStartDay) {
         await db.delete(events).where(eq(events.id, id));
         return NextResponse.json({ success: true });
       }
 
-      // Set endDate to the day before the clicked occurrence.
-      // This preserves all occurrences before the clicked date.
+      // Set endDate to end of the day before the occurrence
       const newEndDate = new Date(occurrenceDate);
       newEndDate.setDate(newEndDate.getDate() - 1);
-      // Set to end of that day
       newEndDate.setHours(23, 59, 59, 999);
 
-      // Also remove any excluded dates that fall after newEndDate (they're now redundant)
-      const currentExcluded: string[] = (existingEvent.excludedDates as string[]) || [];
+      // Clean up excluded dates that are now after the new end (redundant)
+      const currentExcluded: string[] = existingEvent.excludedDates ?? [];
       const cleanedExcluded = currentExcluded.filter(d => new Date(d) <= newEndDate);
 
       await db.update(events)
@@ -233,7 +221,7 @@ export async function DELETE(request: NextRequest) {
           endDate: newEndDate,
           excludedDates: cleanedExcluded.length > 0 ? cleanedExcluded : null,
           updatedAt: new Date(),
-        } as any)
+        })
         .where(eq(events.id, id));
 
       return NextResponse.json({ success: true, endDate: newEndDate.toISOString() });

@@ -1,6 +1,6 @@
 {
-  "name": "Famly - Family Calendar",
-  "short_name": "Famly",
+  "name": "Zawly Calendar",
+  "short_name": "Zawly",
   "description": "A warm, mobile-first family calendar that keeps your household in sync.",
   "start_url": "/dashboard",
   "display": "standalone",

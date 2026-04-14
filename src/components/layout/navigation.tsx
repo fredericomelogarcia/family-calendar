@@ -80,7 +80,7 @@ export function Sidebar() {
       className={cn(
         "hidden lg:flex fixed left-0 top-0 bottom-0 bg-surface border-r border-border flex-col z-40 overflow-hidden",
         "transition-[width] duration-200 ease-in-out",
-        isCollapsed ? "w-20" : "w-64"
+        isCollapsed ? "w-24" : "w-72"
       )}
     >
       {/* Logo */}
@@ -88,12 +88,12 @@ export function Sidebar() {
         "flex items-center flex-shrink-0 h-16 transition-all duration-200",
         isCollapsed ? "justify-center px-0" : "gap-3 px-6"
       )}>
-        <div className="w-10 h-10 rounded-[--radius-md] bg-primary flex items-center justify-center flex-shrink-0">
-          <span className="text-white text-xl font-bold">F</span>
+        <div className="w-10 h-10 rounded-[--radius-md] bg-primary flex items-center justify-center flex-shrink-0 overflow-hidden">
+          <img src="/icons/icon-192.png" alt="Zawly" className="w-full h-full object-cover rounded-[--radius-md]" />
         </div>
         {!isCollapsed && (
           <span className="text-xl font-bold font-[family-name:var(--font-heading)] text-text-primary whitespace-nowrap">
-            Famly
+            Zawly
           </span>
         )}
       </div>
@@ -147,23 +147,6 @@ export function Sidebar() {
           );
         })}
       </nav>
-
-      {/* Add Event Button */}
-      <div className="p-3">
-        <Link
-          href="/events/new"
-          title={isCollapsed ? "New Event" : undefined}
-          className={cn(
-            "flex items-center justify-center gap-2 w-full rounded-[--radius-md] bg-primary text-white font-semibold hover:bg-primary-dark active:scale-[0.98] transition-colors duration-150 h-11",
-            isCollapsed ? "px-0" : "px-3"
-          )}
-        >
-          <Plus size={20} weight="bold" className="flex-shrink-0" />
-          {!isCollapsed && (
-            <span className="whitespace-nowrap">New Event</span>
-          )}
-        </Link>
-      </div>
     </aside>
   );
 }

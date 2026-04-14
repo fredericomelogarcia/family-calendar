@@ -19,7 +19,7 @@ export function AuthLayout({ children, title, subtitle, className }: AuthLayoutP
           <div className="w-12 h-12 mb-4 relative">
             <Image 
               src="/icons/icon.svg" 
-              alt="Famly Logo" 
+              alt="Zawly Logo" 
               fill 
               className="object-contain"
             />

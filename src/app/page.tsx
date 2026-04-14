@@ -25,10 +25,10 @@ export default async function HomePage() {
       {/* Navigation */}
       <nav className="fixed top-0 w-full z-50 px-6 py-4 flex justify-between items-center backdrop-blur-sm bg-background/80 border-b border-border">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shadow-sm">
-            <span className="text-white text-sm font-bold">F</span>
+          <div className="w-8 h-8 rounded-lg overflow-hidden shadow-sm">
+            <img src="/icons/icon-192.png" alt="Zawly" className="w-full h-full object-cover rounded-lg" />
           </div>
-          <span className="font-bold text-lg font-[family-name:var(--font-heading)]">Famly</span>
+          <span className="font-bold text-lg font-[family-name:var(--font-heading)]">Zawly</span>
         </div>
         <div className="flex gap-4">
           <Link 
@@ -55,7 +55,7 @@ export default async function HomePage() {
           </h1>
           
           <p className="text-lg md:text-xl text-text-secondary mb-8 max-w-2xl mx-auto">
-            Stop the "who is doing what" chaos. Famly is a warm, mobile-first shared calendar 
+            Stop the "who is doing what" chaos. Zawly Calendar is a warm, mobile-first shared calendar 
             designed to keep your household organized and connected.
           </p>
           
@@ -115,7 +115,7 @@ export default async function HomePage() {
               <h2 className="text-2xl md:text-3xl font-bold mb-3">Zero stress, zero cost.</h2>
               <p className="text-md text-text-secondary mb-6 max-w-lg mx-auto">
                 We believe organizing your family life shouldn't come with a monthly subscription. 
-                That's why Famly is completely free.
+                That's why Zawly Calendar is completely free.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pb-8">
             <Link
@@ -138,7 +138,7 @@ export default async function HomePage() {
       <footer className="px-6 py-12 border-t border-border bg-surface-alt/50">
         <div className="flex flex-row justify-center">
           <p className="text-sm text-text-tertiary">
-            © {new Date().getFullYear()} Famly. Built with ❤️ for families everywhere.
+            © {new Date().getFullYear()} Zawly Calendar. Built with ❤️ for families everywhere.
           </p>
           </div>
       </footer>

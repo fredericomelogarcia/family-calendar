@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { users, families } from "@/lib/db/schema";
 import { auth, clerkClient } from "@clerk/nextjs/server";
-import { eq, and } from "drizzle-orm";
+import { eq, count } from "drizzle-orm";
 import { generateId, generateInviteCode } from "@/lib/utils";
 
 // GET /api/family - Get current user's family
@@ -13,21 +13,7 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Ensure user exists in our local database
-    const existingUser = await db.query.users.findFirst({
-      where: eq(users.id, userId),
-    });
-
-    if (!existingUser) {
-      // Create user if they don't exist yet (first-time login)
-      await db.insert(users).values({
-        id: userId,
-        role: "member",
-        createdAt: new Date(),
-      });
-    }
-
-    // Now get user with family
+    // Single query: get user with family via relation
     const user = await db.query.users.findFirst({
       where: eq(users.id, userId),
       with: {
@@ -35,37 +21,56 @@ export async function GET() {
       },
     });
 
-    if (!user?.familyId) {
+    // If user doesn't exist yet, create them (first-time login)
+    if (!user) {
+      await db.insert(users).values({
+        id: userId,
+        role: "member",
+      });
+
       return NextResponse.json({ family: null, hasFamily: false });
     }
 
-    // Get all family members
+    if (!user.familyId) {
+      return NextResponse.json({ family: null, hasFamily: false });
+    }
+
+    // Single query: get all family members (only columns we need)
     const familyMembers = await db.query.users.findMany({
       where: eq(users.familyId, user.familyId),
+      columns: { id: true, role: true, familyId: true, createdAt: true },
     });
 
-    // Enrich members with Clerk user data (name, email, avatar)
+    // Batch Clerk call: fetch all member profiles in one request (not N+1)
     const client = await clerkClient();
-    const enrichedMembers = await Promise.all(
-      familyMembers.map(async (member) => {
-        try {
-          const clerkUser = await client.users.getUser(member.id);
-          return {
-            ...member,
-            name: clerkUser.fullName || clerkUser.username || "User",
-            email: clerkUser.emailAddresses[0]?.emailAddress || "",
-            avatar: clerkUser.imageUrl || null,
-          };
-        } catch {
-          return {
-            ...member,
-            name: "User",
-            email: "",
-            avatar: null,
-          };
-        }
-      })
-    );
+    const memberIds = familyMembers.map(m => m.id);
+
+    let enrichedMembers;
+    try {
+      // getUserList fetches all users in one API call — no N+1
+      const clerkResponse = await client.users.getUserList({ userId: memberIds });
+      const clerkUsersMap = new Map(
+        clerkResponse.data.map((u) => [u.id, u])
+      );
+
+      enrichedMembers = familyMembers.map(member => {
+        const clerkUser = clerkUsersMap.get(member.id);
+        return {
+          ...member,
+          name: clerkUser?.fullName || clerkUser?.username || "User",
+          email: clerkUser?.emailAddresses[0]?.emailAddress || "",
+          avatar: clerkUser?.imageUrl || null,
+        };
+      });
+    } catch {
+      // If Clerk batch call fails, fall back to basic data
+      enrichedMembers = familyMembers.map(member => ({
+        ...member,
+        name: "User",
+        email: "",
+        avatar: null,
+      }));
+    }
 
     return NextResponse.json({
       family: user.family,
@@ -90,9 +95,10 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { action, familyName, inviteCode } = body;
 
-    // Check if user already has a family
+    // Only select the columns we need to check
     const existingUser = await db.query.users.findFirst({
       where: eq(users.id, userId),
+      columns: { familyId: true },
     });
 
     if (existingUser?.familyId) {
@@ -100,38 +106,29 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "create") {
-      // Create new family
       if (!familyName || familyName.length < 2) {
         return NextResponse.json({ error: "Family name must be at least 2 characters" }, { status: 400 });
       }
 
-      const now = new Date();
       const familyId = generateId();
       const code = generateInviteCode();
 
-      // Create family
-      await db.insert(families).values({
+      // Single query: insert + return the created family
+      const [family] = await db.insert(families).values({
         id: familyId,
         name: familyName,
         inviteCode: code,
-        createdAt: now,
-        updatedAt: now,
-      });
+      }).returning();
 
       // Update user as admin
       await db.update(users)
         .set({ familyId, role: "admin" })
         .where(eq(users.id, userId));
 
-      const family = await db.query.families.findFirst({
-        where: eq(families.id, familyId),
-      });
-
       return NextResponse.json({ family, action: "created" }, { status: 201 });
     }
 
     if (action === "join") {
-      // Join existing family with invite code
       if (!inviteCode || inviteCode.length !== 6) {
         return NextResponse.json({ error: "Invalid invite code" }, { status: 400 });
       }
@@ -145,13 +142,14 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Invalid invite code" }, { status: 404 });
       }
 
-      // Check family member count
-      const memberCount = await db.query.users.findMany({
-        where: eq(users.familyId, family.id),
-      });
+      // COUNT instead of loading all member rows
+      const [memberCountResult] = await db
+        .select({ count: count() })
+        .from(users)
+        .where(eq(users.familyId, family.id));
 
-      if (memberCount.length >= 3) {
-        return NextResponse.json({ error: "Family is full (max 3 members)" }, { status: 400 });
+      if ((memberCountResult?.count ?? 0) >= 6) {
+        return NextResponse.json({ error: "Family is full (max 6 members)" }, { status: 400 });
       }
 
       // Update user
@@ -170,6 +168,7 @@ export async function POST(request: NextRequest) {
 }
 
 // PATCH /api/family - Update family
+// Uses .returning() to avoid a second query
 export async function PATCH(request: NextRequest) {
   try {
     const { userId } = await auth();
@@ -177,9 +176,10 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Check if user is admin
+    // Only select what we need to authorize
     const user = await db.query.users.findFirst({
       where: eq(users.id, userId),
+      columns: { familyId: true, role: true },
     });
 
     if (!user?.familyId || user.role !== "admin") {
@@ -190,22 +190,23 @@ export async function PATCH(request: NextRequest) {
     const { familyName } = body;
 
     if (familyName && familyName.length >= 2) {
-      await db.update(families)
+      // Single query: update + return
+      const [updatedFamily] = await db.update(families)
         .set({ name: familyName, updatedAt: new Date() })
-        .where(eq(families.id, user.familyId));
+        .where(eq(families.id, user.familyId))
+        .returning();
+
+      return NextResponse.json({ family: updatedFamily });
     }
 
-    const updatedFamily = await db.query.families.findFirst({
+    // If no update was made, fetch current state
+    const family = await db.query.families.findFirst({
       where: eq(families.id, user.familyId),
     });
 
-    return NextResponse.json({ family: updatedFamily });
+    return NextResponse.json({ family });
   } catch (error) {
     console.error("Error updating family:", error);
     return NextResponse.json({ error: "Failed to update family" }, { status: 500 });
   }
 }
-
-// POST /api/family/invite - Generate new invite code (This would be in a separate route file or handled via a specialized handler)
-// For this single-file route.ts, we only handle the main route. 
-// Invite and Leave should be in their own files for proper Next.js route handling.

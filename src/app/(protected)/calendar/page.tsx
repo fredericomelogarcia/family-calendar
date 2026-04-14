@@ -9,13 +9,11 @@ import {
   subMonths,
   startOfMonth,
   endOfMonth,
-  isSameDay,
-  startOfDay,
   setMonth,
   setYear,
 } from "date-fns";
 import { motion } from "framer-motion";
-import { CaretLeft, CaretRight, Plus } from "@phosphor-icons/react";
+import { CaretLeft, CaretRight } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { MonthGrid } from "@/components/calendar/month-grid";
 import { isEventOnDay } from "@/lib/calendar-utils";
@@ -31,7 +29,6 @@ interface Event {
   startDate: Date;
   endDate?: Date;
   allDay: boolean;
-  color: string;
   notes?: string;
   recurrence?: string;
   excludedDates?: string[];
@@ -49,6 +46,7 @@ export default function CalendarPage() {
   const [showEventForm, setShowEventForm] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [deletingEvent, setDeletingEvent] = useState<Event | null>(null);
+  const [occurrenceDate, setOccurrenceDate] = useState<Date | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [hasFamily, setHasFamily] = useState<boolean | null>(null);
 
@@ -158,6 +156,7 @@ export default function CalendarPage() {
 
   const handleEventClick = (event: Event) => {
     setEditingEvent(event);
+    setOccurrenceDate(selectedDate);
   };
 
   const navigatePrevious = () => setCurrentDate(subMonths(currentDate, 1));
@@ -272,14 +271,13 @@ export default function CalendarPage() {
           }}
           initialData={{
             title: editingEvent.title,
-            startDate: editingEvent.startDate,
+            startDate: occurrenceDate || editingEvent.startDate,
             endDate: editingEvent.endDate,
             allDay: editingEvent.allDay,
-            color: editingEvent.color,
             notes: editingEvent.notes,
             recurrence: (editingEvent.recurrence as any) || "none",
           }}
-          defaultDate={editingEvent.startDate}
+          defaultDate={occurrenceDate || editingEvent.startDate}
           mode="edit"
         />
       )}

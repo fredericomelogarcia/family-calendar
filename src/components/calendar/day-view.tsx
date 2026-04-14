@@ -16,7 +16,6 @@ interface DayViewProps {
     startDate: Date;
     endDate?: Date;
     allDay: boolean;
-    color: string;
     notes?: string;
     recurrence?: string;
     excludedDates?: string[];

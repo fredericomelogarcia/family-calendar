@@ -18,7 +18,7 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem("famly-sidebar-collapsed");
+    const saved = localStorage.getItem("zawly-sidebar-collapsed");
     if (saved === "true") {
       setIsCollapsed(true);
     }
@@ -26,7 +26,7 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
 
   const setCollapsed = useCallback((v: boolean) => {
     setIsCollapsed(v);
-    localStorage.setItem("famly-sidebar-collapsed", String(v));
+    localStorage.setItem("zawly-sidebar-collapsed", String(v));
   }, []);
 
   const toggle = useCallback(() => {

@@ -1,44 +1,49 @@
-import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+import { pgTable, text, timestamp, boolean, jsonb, index } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
 // Families table
-export const families = sqliteTable("families", {
+export const families = pgTable("families", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
   inviteCode: text("invite_code").notNull().unique(),
-  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
-  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
 // Users table (extends Clerk user data)
-export const users = sqliteTable("users", {
+export const users = pgTable("users", {
   id: text("id").primaryKey(),
   familyId: text("family_id").references(() => families.id),
   role: text("role", { enum: ["admin", "member"] }).notNull().default("member"),
-  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
-});
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  index("idx_users_family_id").on(table.familyId),
+]);
 
 // Events table
-export const events = sqliteTable("events", {
+export const events = pgTable("events", {
   id: text("id").primaryKey(),
   familyId: text("family_id")
     .notNull()
     .references(() => families.id),
   title: text("title").notNull(),
-  startDate: integer("start_date", { mode: "timestamp" }).notNull(),
-  endDate: integer("end_date", { mode: "timestamp" }),
-  allDay: integer("all_day", { mode: "boolean" }).notNull().default(true),
-  color: text("color").notNull().default("#7C9A7E"),
+  startDate: timestamp("start_date", { withTimezone: true }).notNull(),
+  endDate: timestamp("end_date", { withTimezone: true }),
+  allDay: boolean("all_day").notNull().default(true),
   notes: text("notes"),
   recurrence: text("recurrence", { enum: ["none", "daily", "weekly", "monthly", "yearly"] }).notNull().default("none"),
-  excludedDates: text("excluded_dates", { mode: "json" }), // JSON array of ISO date strings to skip for recurring events
+  excludedDates: jsonb("excluded_dates").$type<string[] | null>(),
   createdBy: text("created_by")
     .notNull()
     .references(() => users.id),
   updatedBy: text("updated_by").references(() => users.id),
-  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
-  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
-});
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  index("idx_events_family_id").on(table.familyId),
+  index("idx_events_start_date").on(table.startDate),
+  index("idx_events_created_by").on(table.createdBy),
+]);
 
 // Relations
 export const familiesRelations = relations(families, ({ many }) => ({

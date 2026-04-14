@@ -5,7 +5,7 @@ export default function SignUpPage() {
   return (
     <AuthLayout 
       title="Create Account" 
-      subtitle="Join Famly and keep your family organized"
+      subtitle="Join Zawly Calendar and keep your family organized"
     >
       <SignUpForm />
     </AuthLayout>

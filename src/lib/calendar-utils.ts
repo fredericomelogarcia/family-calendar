@@ -17,7 +17,12 @@ export function isEventOnDay(event: any, day: Date): boolean {
 
   // Check if this date is excluded
   if (event.excludedDates && Array.isArray(event.excludedDates)) {
-    const targetStr = target.toISOString().split("T")[0];
+    // Use local time components to build the date string, matching how
+    // excludedDates are stored (via date-fns format() which uses local time).
+    const y = target.getFullYear();
+    const m = String(target.getMonth() + 1).padStart(2, "0");
+    const d = String(target.getDate()).padStart(2, "0");
+    const targetStr = `${y}-${m}-${d}`;
     if (event.excludedDates.includes(targetStr)) {
       return false;
     }

@@ -29,13 +29,13 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Famly - Family Calendar",
+  title: "Zawly Calendar",
   description: "A warm, mobile-first family calendar that keeps your household in sync.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Famly",
+    title: "Zawly",
   },
   formatDetection: {
     telephone: false,
@@ -58,11 +58,12 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full" suppressHydrationWarning>
       <head>
-        <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link rel="icon" href="/favicon.ico" sizes="any" />
         {/* Inline script to prevent flash of wrong theme */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem("famly-theme");var d=t==="dark"||(t!=="light"&&window.matchMedia("(prefers-color-scheme:dark)").matches);document.documentElement.classList.toggle("dark",d);var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content",d?"#1A1A1F":"#7C9A7E");}catch(e){}})()`,
+            __html: `(function(){try{var t=localStorage.getItem("zawly-theme");var d=t==="dark";if(!t)d=false;document.documentElement.classList.toggle("dark",d);var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content",d?"#1A1A1F":"#7C9A7E");}catch(e){}})()`,
           }}
         />
       </head>

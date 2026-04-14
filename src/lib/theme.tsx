@@ -23,7 +23,7 @@ interface ThemeContextValue {
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
-const STORAGE_KEY = "famly-theme";
+const STORAGE_KEY = "zawly-theme";
 const MEDIA_QUERY = "(prefers-color-scheme: dark)";
 
 function getSystemPreference(): ResolvedTheme {
@@ -52,7 +52,7 @@ function applyTheme(resolved: ResolvedTheme) {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [preference, setPreferenceState] = useState<ThemePreference>("auto");
+  const [preference, setPreferenceState] = useState<ThemePreference>("light");
   const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>("light");
 
   // Read stored preference on mount

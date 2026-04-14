@@ -11,16 +11,18 @@ interface EventCardProps {
     startDate: Date | string;
     endDate?: Date | string | null;
     allDay?: boolean;
-    color: string;
     notes?: string | null;
   };
   showDate?: boolean;
+  /** The actual occurrence date to display (differs from event.startDate for recurring events) */
+  occurrenceDate?: Date;
   onClick?: () => void;
   onLongPress?: () => void;
 }
 
-export function EventCard({ event, showDate, onClick, onLongPress }: EventCardProps) {
+export function EventCard({ event, showDate, occurrenceDate, onClick, onLongPress }: EventCardProps) {
   const startDate = new Date(event.startDate);
+  const displayDate = occurrenceDate || startDate;
   const isAllDay = event.allDay ?? true;
 
   return (
@@ -38,12 +40,6 @@ export function EventCard({ event, showDate, onClick, onLongPress }: EventCardPr
         onClick && "cursor-pointer"
       )}
     >
-      {/* Color indicator */}
-      <div 
-        className="w-1 h-full min-h-[48px] rounded-full flex-shrink-0"
-        style={{ backgroundColor: event.color }}
-      />
-
       {/* Content */}
       <div className="flex-1 min-w-0">
         <h3 className="font-semibold text-text-primary truncate">
@@ -55,7 +51,7 @@ export function EventCard({ event, showDate, onClick, onLongPress }: EventCardPr
             "text-xs font-mono",
             isAllDay ? "text-text-secondary" : "text-text-tertiary"
           )}>
-            {showDate && format(startDate, "EEEE, MMMM d") + " · "}
+            {showDate && format(displayDate, "EEEE, MMMM d") + " · "}
             {isAllDay 
               ? "All day" 
               : format(startDate, "h:mm a")

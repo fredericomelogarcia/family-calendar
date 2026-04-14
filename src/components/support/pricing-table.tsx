@@ -160,7 +160,7 @@ function PlanCard({
             className="w-full"
           >
             <Heart size={16} weight="fill" />
-            Support Famly
+            Support Zawly Calendar
           </Button>
         )}
       </div>
@@ -198,7 +198,7 @@ export function CustomPricingTable() {
           priceFormatted,
           currencySymbol,
           description: plan.isDefault && !plan.description
-            ? "Thanks for being part of the Famly community — we're glad you're here!"
+            ? "Thanks for being part of the Zawly Calendar community — we're glad you're here!"
             : plan.description,
           isDefault: plan.isDefault,
           isRecurring: plan.isRecurring,
@@ -241,7 +241,7 @@ export function CustomPricingTable() {
           price: 0,
           priceFormatted: "0",
           currencySymbol: "$",
-          description: "Thanks for being part of the Famly community — we're glad you're here!",
+          description: "Thanks for being part of the Zawly Calendar community — we're glad you're here!",
           isDefault: true,
           isRecurring: false,
           period: null,
@@ -291,7 +291,7 @@ export function CustomPricingTable() {
       if (pendingCancellation) {
         showToast("success", "Welcome back! Your support is active again 💚");
       } else {
-        showToast("success", "Thank you for supporting Famly! 💚");
+        showToast("success", "Thank you for supporting Zawly Calendar! 💚");
       }
     } catch (error) {
       console.error("Error during checkout:", error);

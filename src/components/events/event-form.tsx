@@ -7,16 +7,7 @@ import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { CalendarBlank, Clock, Tag, Repeat } from "@phosphor-icons/react";
-
-const EVENT_COLORS = [
-  { name: "Sage", value: "#7C9A7E" },
-  { name: "Terracotta", value: "#C4857A" },
-  { name: "Gold", value: "#D4A853" },
-  { name: "Blue", value: "#6B8EC4" },
-  { name: "Purple", value: "#8B7CC4" },
-  { name: "Coral", value: "#E07B6C" },
-];
+import { CalendarBlank, Clock, Repeat } from "@phosphor-icons/react";
 
 export interface EventFormData {
   title: string;
@@ -25,7 +16,6 @@ export interface EventFormData {
   allDay: boolean;
   startTime?: string;
   endTime?: string;
-  color: string;
   notes?: string;
   recurrence?: "none" | "daily" | "weekly" | "monthly" | "yearly";
 }
@@ -53,7 +43,6 @@ export function EventForm({
   const [startDate, setStartDate] = useState(initialData?.startDate || defaultDate);
   const [allDay, setAllDay] = useState(initialData?.allDay ?? true);
   const [startTime, setStartTime] = useState(initialData?.startTime || "09:00");
-  const [color, setColor] = useState(initialData?.color || "#7C9A7E");
   const [notes, setNotes] = useState(initialData?.notes || "");
   const [recurrence, setRecurrence] = useState<EventFormData["recurrence"]>(initialData?.recurrence || "none");
   const [loading, setLoading] = useState(false);
@@ -65,7 +54,6 @@ export function EventForm({
       setTitle("");
       setAllDay(true);
       setStartTime("09:00");
-      setColor("#7C9A7E");
       setNotes("");
       setRecurrence("none");
       setErrors({});
@@ -89,7 +77,6 @@ export function EventForm({
         startDate,
         allDay,
         startTime: allDay ? undefined : startTime,
-        color,
         notes: notes.trim() || undefined,
         recurrence,
       });
@@ -161,54 +148,31 @@ export function EventForm({
           </div>
         </div>
 
-        {/* Recurrence & Color */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="space-y-4">
-            <label className="block text-sm font-medium text-text-primary flex items-center gap-2">
-              <Repeat size={16} /> Recurrence
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {([
-                { id: "none", label: "None" },
-                { id: "daily", label: "Daily" },
-                { id: "weekly", label: "Weekly" },
-                { id: "monthly", label: "Monthly" },
-                { id: "yearly", label: "Yearly" },
-              ] as const).map((opt) => (
-                <button
-                  key={opt.id}
-                  type="button"
-                  onClick={() => setRecurrence(opt.id as any)}
-                  className={cn(
-                    "px-3 py-1.5 text-xs rounded-full border transition-all",
-                    recurrence === opt.id ? "bg-primary text-white border-primary shadow-sm" : "bg-surface border-border text-text-secondary hover:bg-surface-alt"
-                  )}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <label className="block text-sm font-medium text-text-primary flex items-center gap-2">
-              <Tag size={16} /> Event Color
-            </label>
-            <div className="flex gap-2">
-              {EVENT_COLORS.map((c) => (
-                <button
-                  key={c.value}
-                  type="button"
-                  onClick={() => setColor(c.value)}
-                  className={cn(
-                    "w-7 h-7 rounded-full transition-all border-2",
-                    color === c.value ? "border-text-primary scale-110 shadow-sm" : "border-transparent"
-                  )}
-                  style={{ backgroundColor: c.value }}
-                  title={c.name}
-                />
-              ))}
-            </div>
+        {/* Recurrence */}
+        <div className="space-y-4">
+          <label className="block text-sm font-medium text-text-primary flex items-center gap-2">
+            <Repeat size={16} /> Recurrence
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {([
+              { id: "none", label: "None" },
+              { id: "daily", label: "Daily" },
+              { id: "weekly", label: "Weekly" },
+              { id: "monthly", label: "Monthly" },
+              { id: "yearly", label: "Yearly" },
+            ] as const).map((opt) => (
+              <button
+                key={opt.id}
+                type="button"
+                onClick={() => setRecurrence(opt.id as any)}
+                className={cn(
+                  "px-3 py-1.5 text-xs rounded-full border transition-all",
+                  recurrence === opt.id ? "bg-primary text-white border-primary shadow-sm" : "bg-surface border-border text-text-secondary hover:bg-surface-alt"
+                )}
+              >
+                {opt.label}
+              </button>
+            ))}
           </div>
         </div>
 

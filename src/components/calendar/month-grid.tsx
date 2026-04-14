@@ -23,7 +23,6 @@ interface MonthGridProps {
     id: string;
     title?: string;
     startDate: Date;
-    color: string;
     recurrence?: string;
     endDate?: Date;
     allDay?: boolean;
@@ -100,8 +99,7 @@ export function MonthGrid({ currentMonth, selectedDate, onSelectDate, events }: 
               {/* Event indicator dot */}
               {hasEvents && (
                 <div
-                  className="w-1.5 h-1.5 rounded-full mt-1"
-                  style={{ backgroundColor: dayEvents[0].color }}
+                  className="w-1.5 h-1.5 rounded-full mt-1 bg-primary"
                 />
               )}
             </motion.button>

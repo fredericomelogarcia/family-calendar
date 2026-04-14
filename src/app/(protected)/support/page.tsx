@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { CustomPricingTable } from "@/components/support/pricing-table";
+import { ContactFormButton } from "@/components/support/contact-form-button";
 import { Suspense } from "react";
 
 function SupportContent() {
@@ -9,10 +10,10 @@ function SupportContent() {
       <div className="max-w-2xl w-full space-y-5 md:space-y-8">
         <div className="space-y-2 md:space-y-4">
           <h1 className="bg-gradient-to-r from-primary to-primary-dark bg-clip-text text-3xl md:text-4xl font-bold text-transparent">
-            Support Famly
+            Support Zawly Calendar
           </h1>
           <p className="text-base md:text-lg text-text-secondary">
-            Famly is and will always be free for everyone. If you find it helpful 
+            Zawly Calendar is and will always be free for everyone. If you find it helpful 
             and want to support the continuous development, you can do so below. Your generosity helps keep the servers running!
           </p>
         </div>
@@ -25,6 +26,8 @@ function SupportContent() {
           <p>The support plan is completely optional and does not unlock extra features, 
           but it is greatly appreciated!</p>
         </div>
+
+        <ContactFormButton />
       </div>
     </div>
   );
