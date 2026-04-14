@@ -272,7 +272,6 @@ export function CustomPricingTable() {
   const handleSubscribe = async (planId: string, period: "month" | "annual") => {
     setIsLoading(true);
     try {
-      // Check if user is signed in
       if (!clerk.user) {
         showToast("error", "Please sign in to subscribe.");
         return;
@@ -283,46 +282,57 @@ export function CustomPricingTable() {
         planPeriod: period,
       });
 
-      console.log("Checkout started:", checkout);
+      console.log("Checkout:", checkout);
 
-      // If checkout is already complete, refresh and show success
       if (checkout.status === "completed") {
         await fetchData();
         showToast("success", "Thank you for supporting Zawly Calendar! 💚");
         return;
       }
 
-      // If checkout needs payment confirmation, try to confirm it
-      if (checkout.status === "needs_confirmation" && checkout.needsPaymentMethod) {
-        try {
-          // Use test card in development if needed
-          const confirmed = await checkout.confirm({ 
-            useTestCard: process.env.NODE_ENV === "development" 
-          });
-          
-          console.log("Checkout confirmed:", confirmed);
-          
-          // Refresh data after successful checkout
+      if (checkout.status === "needs_confirmation") {
+        if (!checkout.needsPaymentMethod) {
+          await checkout.confirm({});
           await fetchData();
-          if (pendingCancellation) {
-            showToast("success", "Welcome back! Your support is active again 💚");
-          } else {
-            showToast("success", "Thank you for supporting Zawly Calendar! 💚");
-          }
-        } catch (confirmError) {
-          console.error("Checkout confirmation failed:", confirmError);
-          showToast("error", "Payment confirmation failed. Please try again.");
+          showToast("success", "Thank you for supporting Zawly Calendar! 💚");
+          return;
         }
-        return;
-      }
 
-      // If we get here, the checkout may need additional handling
-      await fetchData();
-      showToast("info", "Please complete your subscription in the payment window.");
+        // Payment method required - try test card or show error
+        try {
+          const confirmed = await checkout.confirm({ 
+            useTestCard: true,
+            gateway: "stripe"
+          });
+          console.log("Confirmed:", confirmed);
+          await fetchData();
+          showToast("success", pendingCancellation 
+            ? "Welcome back! 💚" 
+            : "Thank you for your support! 💚"
+          );
+        } catch (err: any) {
+          console.error("Payment failed - full error:", JSON.stringify(err, null, 2));
+          console.error("Error details:", err?.errors);
+          
+          // Check if it's a configuration error
+          const errorCode = err?.errors?.[0]?.code;
+          const errorMessage = err?.errors?.[0]?.message || err?.message;
+          
+          console.log("Error code:", errorCode);
+          console.log("Error message:", errorMessage);
+          
+          if (errorCode?.includes("configuration") || errorMessage?.toLowerCase().includes("configuration")) {
+            showToast("error", "Billing configuration error. Please check: 1) Stripe is connected in Clerk Dashboard, 2) Your plan has a valid price, 3) You're using test mode if using test cards.");
+          } else if (errorMessage?.includes("test")) {
+            showToast("error", "Live mode detected. Test cards only work in test mode. Please use a real card or switch to test mode in Clerk Dashboard.");
+          } else {
+            showToast("error", errorMessage || "Payment failed. Please try again.");
+          }
+        }
+      }
     } catch (error: any) {
-      console.error("Error during checkout:", error);
-      const errorMessage = error?.errors?.[0]?.message || error?.message || "Something went wrong. Please try again.";
-      showToast("error", errorMessage);
+      console.error("Checkout error:", error);
+      showToast("error", error?.errors?.[0]?.message || "Checkout failed.");
     } finally {
       setIsLoading(false);
     }
