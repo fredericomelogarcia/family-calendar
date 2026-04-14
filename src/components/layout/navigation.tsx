@@ -32,12 +32,12 @@ export function BottomNav() {
 
           if (item.isSpecial) {
             return (
-              <div key={`nav-special-${index}`} className="relative w-12 h-12 flex items-center justify-center -mt-8">
+              <div key={`nav-special-${index}`} className="relative w-16 h-16 flex items-center justify-center -mt-14">
                 <Link
                   href={item.href}
-                  className="absolute inset-0 flex items-center justify-center w-12 h-12 rounded-full bg-primary text-white shadow-lg hover:bg-primary-dark active:scale-95 transition-all duration-150"
+                  className="absolute inset-0 flex items-center justify-center w-16 h-16 rounded-full bg-primary text-white shadow-lg shadow-[0_8px_24px_-4px_rgba(0,0,0,0.55)] hover:bg-primary-dark active:scale-95 transition-all duration-150"
                 >
-                  <Icon size={22} weight="bold" />
+                  <Icon size={28} weight="bold" />
                 </Link>
               </div>
             );
