@@ -46,9 +46,13 @@ export function SignInForm() {
       });
 
       if (error) {
+        console.error("Sign-in error:", error);
         setServerError(error.message || error.longMessage || "Something went wrong. Please try again.");
         return;
       }
+
+      console.log("Sign-in status:", signIn.status);
+      console.log("Sign-in object:", signIn);
 
       // If sign-in successful, finalize
       if (signIn.status === "complete") {
@@ -62,9 +66,45 @@ export function SignInForm() {
         return;
       }
 
-      // Handle other statuses if needed
-      setServerError("Sign-in incomplete. Please try again.");
+      // Handle needs_client_trust (CAPTCHA/verification required)
+      if (signIn.status === "needs_client_trust") {
+        console.log("Client trust required - checking for supported factors");
+        // Check if email code is available
+        const emailCodeFactor = signIn.supportedSecondFactors?.find(
+          (factor) => factor.strategy === "email_code"
+        );
+        if (emailCodeFactor) {
+          await signIn.mfa.sendEmailCode();
+          setServerError("Please check your email for a verification code to continue signing in.");
+          return;
+        }
+        setServerError("Additional verification required. Please try again.");
+        return;
+      }
+
+      // Handle needs_second_factor (MFA)
+      if (signIn.status === "needs_second_factor") {
+        setServerError("Two-factor authentication required. Check your email for a code.");
+        return;
+      }
+
+      // Handle needs_identifier
+      if (signIn.status === "needs_identifier") {
+        setServerError("Please enter your email address.");
+        return;
+      }
+
+      // Handle needs_new_password
+      if (signIn.status === "needs_new_password") {
+        setServerError("Your password needs to be reset. Please contact support.");
+        return;
+      }
+
+      // Fallback for any other status
+      console.error("Unhandled sign-in status:", signIn.status, signIn);
+      setServerError(`Sign-in incomplete (${signIn.status}). Please try again.`);
     } catch (err: any) {
+      console.error("Sign-in exception:", err);
       setServerError(err.errors?.[0]?.message || err.message || "Something went wrong. Please try again.");
     } finally {
       setIsSubmitting(false);
@@ -96,6 +136,9 @@ export function SignInForm() {
             {serverError}
           </div>
         )}
+
+        {/* Clerk CAPTCHA container - required if bot protection triggers */}
+        <div id="clerk-captcha" className="flex justify-center empty:hidden" />
 
         <Button type="submit" className="w-full" loading={isSubmitting} disabled={!isValid || isSubmitting}>
           Sign In
