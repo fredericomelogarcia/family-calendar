@@ -17,7 +17,7 @@ export interface EventFormData {
   startTime?: string;
   endTime?: string;
   notes?: string;
-  recurrence?: "none" | "daily" | "weekly" | "monthly" | "yearly";
+  recurrence?: "none" | "daily" | "weekly" | "biweekly" | "monthly" | "yearly";
 }
 
 interface EventFormProps {
@@ -158,6 +158,7 @@ export function EventForm({
               { id: "none", label: "None" },
               { id: "daily", label: "Daily" },
               { id: "weekly", label: "Weekly" },
+              { id: "biweekly", label: "Bi-Weekly" },
               { id: "monthly", label: "Monthly" },
               { id: "yearly", label: "Yearly" },
             ] as const).map((opt) => (

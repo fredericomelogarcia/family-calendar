@@ -39,6 +39,18 @@ export function isEventOnDay(event: any, day: Date): boolean {
 
   // Try RRule first, fall back to direct comparison if it fails
   try {
+    // Handle biweekly specially (weekly with interval 2)
+    if (event.recurrence === "biweekly") {
+      const rule = new RRule({
+        freq: RRule.WEEKLY,
+        interval: 2,
+        dtstart: start,
+        until: end || undefined,
+      });
+      const nextOccurrence = rule.after(target, true);
+      return nextOccurrence !== null && nextOccurrence.toDateString() === target.toDateString();
+    }
+
     const freqMap: Record<string, number> = {
       daily: RRule.DAILY,
       weekly: RRule.WEEKLY,
@@ -71,6 +83,11 @@ function directComparison(recurrence: string, start: Date, day: Date): boolean {
       return true;
     case "weekly":
       return start.getDay() === day.getDay();
+    case "biweekly": {
+      const msPerWeek = 7 * 24 * 60 * 60 * 1000;
+      const diffWeeks = Math.floor((day.getTime() - start.getTime()) / msPerWeek);
+      return start.getDay() === day.getDay() && diffWeeks % 2 === 0;
+    }
     case "monthly":
       return start.getDate() === day.getDate();
     case "yearly":
