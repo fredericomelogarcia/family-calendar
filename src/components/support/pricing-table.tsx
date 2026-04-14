@@ -272,30 +272,57 @@ export function CustomPricingTable() {
   const handleSubscribe = async (planId: string, period: "month" | "annual") => {
     setIsLoading(true);
     try {
+      // Check if user is signed in
+      if (!clerk.user) {
+        showToast("error", "Please sign in to subscribe.");
+        return;
+      }
+
       const checkout = await clerk.billing.startCheckout({
         planId,
         planPeriod: period,
       });
 
-      // If checkout needs payment confirmation
-      if (checkout.status === "needs_confirmation" && checkout.needsPaymentMethod) {
-        try {
-          await checkout.confirm({ useTestCard: false });
-        } catch {
-          showToast("info", "Complete your payment in the checkout window.");
-        }
+      console.log("Checkout started:", checkout);
+
+      // If checkout is already complete, refresh and show success
+      if (checkout.status === "completed") {
+        await fetchData();
+        showToast("success", "Thank you for supporting Zawly Calendar! 💚");
+        return;
       }
 
-      // Refresh data after checkout
-      await fetchData();
-      if (pendingCancellation) {
-        showToast("success", "Welcome back! Your support is active again 💚");
-      } else {
-        showToast("success", "Thank you for supporting Zawly Calendar! 💚");
+      // If checkout needs payment confirmation, try to confirm it
+      if (checkout.status === "needs_confirmation" && checkout.needsPaymentMethod) {
+        try {
+          // Use test card in development if needed
+          const confirmed = await checkout.confirm({ 
+            useTestCard: process.env.NODE_ENV === "development" 
+          });
+          
+          console.log("Checkout confirmed:", confirmed);
+          
+          // Refresh data after successful checkout
+          await fetchData();
+          if (pendingCancellation) {
+            showToast("success", "Welcome back! Your support is active again 💚");
+          } else {
+            showToast("success", "Thank you for supporting Zawly Calendar! 💚");
+          }
+        } catch (confirmError) {
+          console.error("Checkout confirmation failed:", confirmError);
+          showToast("error", "Payment confirmation failed. Please try again.");
+        }
+        return;
       }
-    } catch (error) {
+
+      // If we get here, the checkout may need additional handling
+      await fetchData();
+      showToast("info", "Please complete your subscription in the payment window.");
+    } catch (error: any) {
       console.error("Error during checkout:", error);
-      showToast("error", "Something went wrong. Please try again.");
+      const errorMessage = error?.errors?.[0]?.message || error?.message || "Something went wrong. Please try again.";
+      showToast("error", errorMessage);
     } finally {
       setIsLoading(false);
     }
