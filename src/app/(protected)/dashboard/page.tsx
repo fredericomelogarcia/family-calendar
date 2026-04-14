@@ -15,7 +15,8 @@ import { showToast } from "@/components/ui/toast";
 import { isEventOnDay } from "@/lib/calendar-utils";
 
 const AUTO_REFRESH_STORAGE_KEY = "zawly-dashboard-auto-refresh";
-const AUTO_REFRESH_INTERVAL = 30 * 60 * 1000; // 30 minutes
+const AUTO_REFRESH_INTERVAL_MS =  30 * 60 * 1000 // 10 seconds for testing
+const AUTO_REFRESH_INTERVAL_SEC = 30 * 60;
 
 interface Event {
   id: string;
@@ -51,7 +52,7 @@ export default function DashboardPage() {
   const [hasFamily, setHasFamily] = useState<boolean | null>(null);
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false);
   const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
-  const [countdownSeconds, setCountdownSeconds] = useState(30 * 60); // 30 minutes in seconds
+  const [countdownSeconds, setCountdownSeconds] = useState(AUTO_REFRESH_INTERVAL_SEC); // 30 minutes in seconds
   
   // Load auto-refresh preference from localStorage
   useEffect(() => {
@@ -77,7 +78,7 @@ export default function DashboardPage() {
     }
     if (enabled) {
       setLastRefreshed(new Date());
-      setCountdownSeconds(30 * 60);
+      setCountdownSeconds(AUTO_REFRESH_INTERVAL_SEC);
     }
   }, []);
 
@@ -102,24 +103,24 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!autoRefreshEnabled) {
-      setCountdownSeconds(30 * 60);
+      setCountdownSeconds(AUTO_REFRESH_INTERVAL_SEC);
       return;
     }
 
     // Set initial countdown from last refresh or now
     if (lastRefreshed) {
       const elapsed = Date.now() - lastRefreshed.getTime();
-      const remaining = Math.max(0, Math.ceil((AUTO_REFRESH_INTERVAL - elapsed) / 1000));
+      const remaining = Math.max(0, Math.ceil((AUTO_REFRESH_INTERVAL_MS - elapsed) / 1000));
       setCountdownSeconds(remaining);
     } else {
-      setCountdownSeconds(30 * 60);
+      setCountdownSeconds(AUTO_REFRESH_INTERVAL_SEC);
     }
 
     // Countdown timer (every second)
     const countdownInterval = setInterval(() => {
       setCountdownSeconds((prev) => {
         if (prev <= 1) {
-          return 30 * 60;
+          return AUTO_REFRESH_INTERVAL_SEC;
         }
         return prev - 1;
       });
@@ -129,7 +130,7 @@ export default function DashboardPage() {
     const refreshInterval = setInterval(() => {
       fetchEvents();
       setLastRefreshed(new Date());
-    }, AUTO_REFRESH_INTERVAL);
+    }, AUTO_REFRESH_INTERVAL_MS);
 
     return () => {
       clearInterval(countdownInterval);
@@ -462,6 +463,10 @@ export default function DashboardPage() {
 }
 
 function formatCountdown(seconds: number): string {
+  // For short intervals (like 10s testing), just show seconds
+  if (seconds < 60) {
+    return `${seconds}s`;
+  }
   const mins = Math.floor(seconds / 60);
   const secs = seconds % 60;
   return `${mins}:${secs.toString().padStart(2, '0')}`;
