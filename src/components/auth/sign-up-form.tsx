@@ -318,8 +318,8 @@ export function SignUpForm() {
           </div>
         )}
 
-        {/* Clerk CAPTCHA container - required for bot protection */}
-        <div id="clerk-captcha" className="flex justify-center min-h-[76px]" />
+        {/* Clerk CAPTCHA container - only takes space when rendered */}
+        <div id="clerk-captcha" className="flex justify-center empty:hidden" />
 
         <Button type="submit" className="w-full" loading={isSubmitting} disabled={!isValid || isSubmitting}>
           Create Account
