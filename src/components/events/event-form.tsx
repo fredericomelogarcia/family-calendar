@@ -102,8 +102,8 @@ export function EventForm({
             autoFocus
           />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <div className="space-y-1.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 min-w-0">
+            <div className="space-y-1.5 min-w-0">
               <label className="block text-sm font-medium text-text-primary">Date</label>
               <div className="relative">
                 <CalendarBlank className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" size={18} />
@@ -111,12 +111,12 @@ export function EventForm({
                   type="date"
                   value={format(startDate, "yyyy-MM-dd")}
                   onChange={(e) => setStartDate(new Date(e.target.value))}
-                  className="w-full h-12 pl-10 pr-4 rounded-[--radius-sm] border border-border bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full min-w-0 h-12 pl-10 pr-4 rounded-[--radius-sm] border border-border bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
             </div>
 
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 min-w-0">
               <div className="flex items-center justify-between">
                 <label className="block text-sm font-medium text-text-primary">Time</label>
                 <Button
@@ -136,7 +136,7 @@ export function EventForm({
                     type="time"
                     value={startTime}
                     onChange={(e) => setStartTime(e.target.value)}
-                    className="w-full h-12 pl-10 pr-4 rounded-[--radius-sm] border border-border bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full min-w-0 h-12 pl-10 pr-4 rounded-[--radius-sm] border border-border bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                 </div>
               ) : (
@@ -186,16 +186,16 @@ export function EventForm({
           />
         </div>
 
-        <div className="flex items-center gap-3 pt-4 border-t border-border">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-4 border-t border-border">
           {mode === "edit" && onDelete && (
-            <Button type="button" variant="danger" onClick={onDelete} className="flex-1 py-6">
+            <Button type="button" variant="danger" onClick={onDelete} className="flex-1 h-12">
               Delete
             </Button>
           )}
-          <Button type="button" variant="secondary" onClick={onClose} className="flex-1 py-6">
+          <Button type="button" variant="secondary" onClick={onClose} className="flex-1 h-12">
             Cancel
           </Button>
-          <Button type="submit" variant="primary" loading={loading} className="flex-1 py-6 shadow-lg shadow-primary/20">
+          <Button type="submit" variant="primary" loading={loading} className="flex-1 h-12 shadow-lg shadow-primary/20">
             {mode === "create" ? "Create Event" : "Save Changes"}
           </Button>
         </div>

@@ -96,12 +96,12 @@ export function MonthGrid({ currentMonth, selectedDate, onSelectDate, events }: 
                 {format(day, "d")}
               </span>
               
-              {/* Event indicator dot */}
-              {hasEvents && (
-                <div
-                  className="w-1.5 h-1.5 rounded-full mt-1 bg-primary"
-                />
-              )}
+              {/* Event indicator dot - always reserve space so number stays aligned */}
+              <div className="h-1.5 mt-1 flex items-center justify-center">
+                {hasEvents && (
+                  <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                )}
+              </div>
             </motion.button>
           );
         })}
