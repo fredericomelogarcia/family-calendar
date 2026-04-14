@@ -1,17 +1,21 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { format, isSameDay, startOfDay, endOfDay, addDays } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, CalendarBlank, Users } from "@phosphor-icons/react";
+import { Plus, CalendarBlank, Users, ArrowsClockwise } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { EventCard } from "@/components/events/event-card";
 import { EventForm, EventFormData } from "@/components/events/event-form";
 import { DeleteEventModal } from "@/components/events/delete-event-modal";
 import { showToast } from "@/components/ui/toast";
 import { isEventOnDay } from "@/lib/calendar-utils";
+
+const AUTO_REFRESH_STORAGE_KEY = "zawly-dashboard-auto-refresh";
+const AUTO_REFRESH_INTERVAL = 30 * 60 * 1000; // 30 minutes
 
 interface Event {
   id: string;
@@ -45,7 +49,94 @@ export default function DashboardPage() {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
   const [hasFamily, setHasFamily] = useState<boolean | null>(null);
+  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false);
+  const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
+  const [countdownSeconds, setCountdownSeconds] = useState(30 * 60); // 30 minutes in seconds
   
+  // Load auto-refresh preference from localStorage
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(AUTO_REFRESH_STORAGE_KEY);
+      if (stored !== null) {
+        setAutoRefreshEnabled(stored === "true");
+      }
+    } catch {
+      // localStorage unavailable
+    }
+  }, []);
+
+  // Auto-refresh interval and countdown
+
+  // Save auto-refresh preference
+  const toggleAutoRefresh = useCallback((enabled: boolean) => {
+    setAutoRefreshEnabled(enabled);
+    try {
+      localStorage.setItem(AUTO_REFRESH_STORAGE_KEY, String(enabled));
+    } catch {
+      // localStorage unavailable
+    }
+    if (enabled) {
+      setLastRefreshed(new Date());
+      setCountdownSeconds(30 * 60);
+    }
+  }, []);
+
+  const fetchEvents = useCallback(async (start?: Date, end?: Date) => {
+    try {
+      const startDate = start || addDays(startOfDay(new Date()), -7);
+      const endDate = end || addDays(endOfDay(new Date()), 30);
+      const res = await fetch(
+        `/api/events?start=${startDate.toISOString()}&end=${endDate.toISOString()}`
+      );
+      const data = await res.json();
+      const parsedEvents = (data.events || []).map((event: Event & { startDate: string }) => ({
+        ...event,
+        startDate: new Date(event.startDate),
+        endDate: event.endDate ? new Date(event.endDate) : undefined,
+      }));
+      setEvents(parsedEvents);
+    } catch (error) {
+      console.error("Error fetching events:", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!autoRefreshEnabled) {
+      setCountdownSeconds(30 * 60);
+      return;
+    }
+
+    // Set initial countdown from last refresh or now
+    if (lastRefreshed) {
+      const elapsed = Date.now() - lastRefreshed.getTime();
+      const remaining = Math.max(0, Math.ceil((AUTO_REFRESH_INTERVAL - elapsed) / 1000));
+      setCountdownSeconds(remaining);
+    } else {
+      setCountdownSeconds(30 * 60);
+    }
+
+    // Countdown timer (every second)
+    const countdownInterval = setInterval(() => {
+      setCountdownSeconds((prev) => {
+        if (prev <= 1) {
+          return 30 * 60;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    // Refresh timer (every 30 minutes)
+    const refreshInterval = setInterval(() => {
+      fetchEvents();
+      setLastRefreshed(new Date());
+    }, AUTO_REFRESH_INTERVAL);
+
+    return () => {
+      clearInterval(countdownInterval);
+      clearInterval(refreshInterval);
+    };
+  }, [autoRefreshEnabled, fetchEvents, lastRefreshed]);
+
   useEffect(() => {
     if (!isLoaded) return;
     if (!user) {
@@ -70,25 +161,6 @@ export default function DashboardPage() {
       console.error("Error checking family:", error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchEvents = async (start?: Date, end?: Date) => {
-    try {
-      const startDate = start || addDays(startOfDay(new Date()), -7);
-      const endDate = end || addDays(endOfDay(new Date()), 30);
-      const res = await fetch(
-        `/api/events?start=${startDate.toISOString()}&end=${endDate.toISOString()}`
-      );
-      const data = await res.json();
-      const parsedEvents = (data.events || []).map((event: Event & { startDate: string }) => ({
-        ...event,
-        startDate: new Date(event.startDate),
-        endDate: event.endDate ? new Date(event.endDate) : undefined,
-      }));
-      setEvents(parsedEvents);
-    } catch (error) {
-      console.error("Error fetching events:", error);
     }
   };
 
@@ -217,7 +289,7 @@ export default function DashboardPage() {
   return (
     <div className="min-h-full p-4 md:p-6 lg:p-8 max-w-5xl">
       {/* Header */}
-      <header className="flex items-center justify-between mb-6">
+      <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold font-[family-name:var(--font-heading)] text-text-primary">
             Good {getGreeting()}, {user?.firstName || "there"} 👋
@@ -226,13 +298,37 @@ export default function DashboardPage() {
             {format(selectedDate, "EEEE, MMMM d, yyyy")}
           </p>
         </div>
-        <Button
-          onClick={() => setShowEventForm(true)}
-          className="hidden lg:flex"
-          leftIcon={<Plus size={18} weight="bold" />}
-        >
-          New Event
-        </Button>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+          <div className="flex items-center gap-2 px-3 py-2 rounded-[--radius-md] bg-surface border border-border">
+            <ArrowsClockwise
+              size={16}
+              className={autoRefreshEnabled ? "text-primary animate-spin" : "text-text-tertiary"}
+              style={autoRefreshEnabled ? { animationDuration: '3s' } : undefined}
+            />
+            <Checkbox
+              id="auto-refresh"
+              checked={autoRefreshEnabled}
+              onChange={toggleAutoRefresh}
+              label={
+                <span className="flex items-center gap-1">
+                  Auto-refresh
+                  {autoRefreshEnabled && (
+                    <span className="text-xs text-text-tertiary font-mono">
+                      {formatCountdown(countdownSeconds)}
+                    </span>
+                  )}
+                </span>
+              }
+            />
+          </div>
+          <Button
+            onClick={() => setShowEventForm(true)}
+            className="hidden lg:flex"
+            leftIcon={<Plus size={18} weight="bold" />}
+          >
+            New Event
+          </Button>
+        </div>
       </header>
 
       {/* Today's Events */}
@@ -363,6 +459,12 @@ export default function DashboardPage() {
       />
     </div>
   );
+}
+
+function formatCountdown(seconds: number): string {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
 function getGreeting() {
