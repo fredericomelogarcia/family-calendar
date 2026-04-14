@@ -3,11 +3,12 @@
 import { useState } from "react";
 import { useSignUp } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Envelope, LockKey } from "@phosphor-icons/react";
 import Link from "next/link";
 
@@ -16,6 +17,7 @@ const signUpSchema = z.object({
   lastName: z.string().min(2, "Last name is too short"),
   email: z.string().email("Please enter a valid email address"),
   password: z.string().min(8, "Password must be at least 8 characters"),
+  acceptTerms: z.boolean().refine((val) => val === true, "You must accept the Terms & Conditions"),
 });
 
 type SignUpValues = z.infer<typeof signUpSchema>;
@@ -28,10 +30,14 @@ export function SignUpForm() {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors, isValid },
   } = useForm<SignUpValues>({
     resolver: zodResolver(signUpSchema),
     mode: "onChange",
+    defaultValues: {
+      acceptTerms: false,
+    },
   });
 
   const onSubmit = async (values: SignUpValues) => {
@@ -86,6 +92,41 @@ export function SignUpForm() {
           leftIcon={<LockKey className="w-4 h-4 text-text-tertiary" />}
         />
         
+        <Controller
+          name="acceptTerms"
+          control={control}
+          render={({ field }) => (
+            <Checkbox
+              id="accept-terms"
+              checked={field.value}
+              onChange={field.onChange}
+              error={errors.acceptTerms?.message}
+              label={
+                <>
+                  I agree to the{" "}
+                  <Link
+                    href="/terms"
+                    target="_blank"
+                    className="text-primary font-semibold hover:underline"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    Terms &amp; Conditions
+                  </Link>{" "}
+                  and{" "}
+                  <Link
+                    href="/privacy"
+                    target="_blank"
+                    className="text-primary font-semibold hover:underline"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    Privacy Policy
+                  </Link>
+                </>
+              }
+            />
+          )}
+        />
+
         {serverError && (
           <div className="p-3 text-sm text-error bg-error/10 border border-error/20 rounded-md animate-slide-up">
             {serverError}
@@ -100,7 +141,7 @@ export function SignUpForm() {
       <p className="text-center text-sm text-text-secondary mt-6">
         Already have an account?{" "}
         <Link href="/sign-in" className="text-primary font-semibold hover:underline">
-          Create an account
+          Sign in
         </Link>
       </p>
     </div>
