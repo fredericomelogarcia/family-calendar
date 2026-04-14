@@ -243,3 +243,25 @@ h1, h2, h3, h4, h5, h6 {
 #clerk-captcha iframe {
   border-radius: var(--radius-md);
 }
+
+/* iOS date/time input fixes - prevents oversized appearance on mobile Safari */
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"] {
+  -webkit-appearance: none;
+  appearance: none;
+  font-size: 16px; /* Prevents iOS zoom on focus */
+  line-height: 1.2;
+}
+
+/* Ensure date/time inputs don't get iOS special styling */
+input[type="date"]::-webkit-date-and-time-value,
+input[type="time"]::-webkit-date-and-time-value {
+  text-align: left;
+}
+
+/* Remove inner padding/spacing iOS adds */
+input[type="date"]:focus,
+input[type="time"]:focus {
+  outline: none;
+}

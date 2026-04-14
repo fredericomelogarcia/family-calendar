@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useSignIn, useAuth } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -8,7 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Envelope, LockKey } from "@phosphor-icons/react";
+import { Envelope, LockKey, Shield } from "@phosphor-icons/react";
 import Link from "next/link";
 
 const signInSchema = z.object({
@@ -16,7 +16,12 @@ const signInSchema = z.object({
   password: z.string().min(8, "Password must be at least 8 characters"),
 });
 
+const verificationSchema = z.object({
+  code: z.string().length(6, "Code must be 6 digits").regex(/^\d{6}$/, "Code must be 6 digits"),
+});
+
 type SignInValues = z.infer<typeof signInSchema>;
+type VerificationValues = z.infer<typeof verificationSchema>;
 
 export function SignInForm() {
   const { signIn, errors: clerkErrors } = useSignIn();
@@ -24,11 +29,18 @@ export function SignInForm() {
   const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pendingVerification, setPendingVerification] = useState(false);
+  const [verificationEmail, setVerificationEmail] = useState("");
+  const [resendTimer, setResendTimer] = useState(60);
+  
+  // Separate form for verification code
+  const [code, setCode] = useState("");
 
   const {
     register,
     handleSubmit,
     formState: { errors, isValid },
+    getValues,
   } = useForm<SignInValues>({
     resolver: zodResolver(signInSchema),
     mode: "onChange",
@@ -52,7 +64,6 @@ export function SignInForm() {
       }
 
       console.log("Sign-in status:", signIn.status);
-      console.log("Sign-in object:", signIn);
 
       // If sign-in successful, finalize
       if (signIn.status === "complete") {
@@ -66,41 +77,21 @@ export function SignInForm() {
         return;
       }
 
-      // Handle needs_client_trust (CAPTCHA/verification required)
-      if (signIn.status === "needs_client_trust") {
-        console.log("Client trust required - checking for supported factors");
-        // Check if email code is available
-        const emailCodeFactor = signIn.supportedSecondFactors?.find(
-          (factor) => factor.strategy === "email_code"
-        );
-        if (emailCodeFactor) {
-          await signIn.mfa.sendEmailCode();
-          setServerError("Please check your email for a verification code to continue signing in.");
+      // Handle needs_client_trust or needs_second_factor (verification code required)
+      if (signIn.status === "needs_client_trust" || signIn.status === "needs_second_factor") {
+        console.log("Verification required");
+        const { error: sendError } = await signIn.mfa.sendEmailCode();
+        if (sendError) {
+          setServerError(sendError.message || "Failed to send verification code.");
           return;
         }
-        setServerError("Additional verification required. Please try again.");
+        setVerificationEmail(values.email);
+        setPendingVerification(true);
+        startResendTimer();
         return;
       }
 
-      // Handle needs_second_factor (MFA)
-      if (signIn.status === "needs_second_factor") {
-        setServerError("Two-factor authentication required. Check your email for a code.");
-        return;
-      }
-
-      // Handle needs_identifier
-      if (signIn.status === "needs_identifier") {
-        setServerError("Please enter your email address.");
-        return;
-      }
-
-      // Handle needs_new_password
-      if (signIn.status === "needs_new_password") {
-        setServerError("Your password needs to be reset. Please contact support.");
-        return;
-      }
-
-      // Fallback for any other status
+      // Handle other statuses
       console.error("Unhandled sign-in status:", signIn.status, signIn);
       setServerError(`Sign-in incomplete (${signIn.status}). Please try again.`);
     } catch (err: any) {
@@ -111,6 +102,144 @@ export function SignInForm() {
     }
   };
 
+  const startResendTimer = () => {
+    setResendTimer(60);
+    const timer = setInterval(() => {
+      setResendTimer((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  const handleVerificationSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isLoaded || !signIn || code.length !== 6) return;
+    
+    setIsSubmitting(true);
+    setServerError(null);
+
+    try {
+      const { error } = await signIn.mfa.verifyEmailCode({ code });
+
+      if (error) {
+        setServerError(error.message || "Invalid verification code. Please try again.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (signIn.status === "complete") {
+        await signIn.finalize({
+          navigate: (url) => {
+            const urlString = typeof url === "string" ? url : "/dashboard";
+            router.push(urlString);
+            return Promise.resolve();
+          },
+        });
+        return;
+      }
+
+      setServerError("Verification incomplete. Please try again.");
+    } catch (err: any) {
+      setServerError(err.errors?.[0]?.message || "Invalid verification code.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleResendCode = async () => {
+    if (!isLoaded || !signIn || resendTimer > 0) return;
+    
+    setIsSubmitting(true);
+    try {
+      const { error } = await signIn.mfa.sendEmailCode();
+      if (error) {
+        setServerError(error.message || "Failed to resend code.");
+      } else {
+        startResendTimer();
+      }
+    } catch (err: any) {
+      setServerError(err.errors?.[0]?.message || "Failed to resend code.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Show verification UI
+  if (pendingVerification) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center space-y-2">
+          <div className="flex justify-center mb-4">
+            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+              <Shield className="w-6 h-6 text-primary" />
+            </div>
+          </div>
+          <h3 className="text-lg font-semibold text-text-primary">Verify your identity</h3>
+          <p className="text-sm text-text-secondary">
+            We&apos;ve sent a verification code to <span className="font-medium text-text-primary">{verificationEmail}</span>
+          </p>
+        </div>
+
+        <form onSubmit={handleVerificationSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-text-primary mb-1.5">Verification Code</label>
+            <input
+              type="text"
+              inputMode="numeric"
+              maxLength={6}
+              placeholder="000000"
+              value={code}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
+              className="w-full h-12 px-4 text-center text-2xl tracking-[0.5em] rounded-[--radius-sm] border border-border bg-surface text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-primary font-mono"
+              autoComplete="one-time-code"
+              autoFocus
+            />
+          </div>
+
+          {serverError && (
+            <div className="p-3 text-sm text-error bg-error/10 border border-error/20 rounded-md animate-slide-up">
+              {serverError}
+            </div>
+          )}
+
+          <Button type="submit" className="w-full" loading={isSubmitting} disabled={code.length !== 6 || isSubmitting}>
+            Verify & Sign In
+          </Button>
+        </form>
+
+        <div className="text-center space-y-2">
+          <p className="text-sm text-text-secondary">
+            Didn&apos;t receive the code?{" "}
+            {resendTimer > 0 ? (
+              <span className="text-text-tertiary">Resend in {resendTimer}s</span>
+            ) : (
+              <button
+                onClick={handleResendCode}
+                disabled={isSubmitting}
+                className="text-primary font-medium hover:underline disabled:opacity-50"
+              >
+                {isSubmitting ? "Sending..." : "Resend code"}
+              </button>
+            )}
+          </p>
+          <p className="text-sm text-text-secondary">
+            <button
+              onClick={() => { setPendingVerification(false); setCode(""); setServerError(null); }}
+              className="text-primary font-medium hover:underline"
+            >
+              Back to sign in
+            </button>
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Normal sign-in form
   return (
     <div className="space-y-6">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

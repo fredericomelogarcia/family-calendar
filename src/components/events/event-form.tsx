@@ -111,7 +111,7 @@ export function EventForm({
                   type="date"
                   value={format(startDate, "yyyy-MM-dd")}
                   onChange={(e) => setStartDate(new Date(e.target.value))}
-                  className="w-full min-w-0 h-12 pl-10 pr-4 rounded-[--radius-sm] border border-border bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full min-w-0 h-11 sm:h-12 pl-10 pr-3 rounded-[--radius-sm] border border-border bg-surface text-text-primary text-base focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
             </div>
@@ -136,11 +136,11 @@ export function EventForm({
                     type="time"
                     value={startTime}
                     onChange={(e) => setStartTime(e.target.value)}
-                    className="w-full min-w-0 h-12 pl-10 pr-4 rounded-[--radius-sm] border border-border bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full min-w-0 h-11 sm:h-12 pl-10 pr-3 rounded-[--radius-sm] border border-border bg-surface text-text-primary text-base focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                 </div>
               ) : (
-                <div className="h-12 flex items-center px-3 text-sm text-text-tertiary bg-surface-alt rounded-[--radius-sm] border border-border border-dashed">
+                <div className="h-11 sm:h-12 flex items-center px-3 text-sm text-text-tertiary bg-surface-alt rounded-[--radius-sm] border border-border border-dashed">
                   Event spans the whole day
                 </div>
               )}
