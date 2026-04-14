@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useSignUp, useAuth } from "@clerk/nextjs";
+import { useState, useEffect } from "react";
+import { useSignUp } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -9,7 +9,7 @@ import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Envelope, LockKey } from "@phosphor-icons/react";
+import { Envelope, LockKey, CheckCircle } from "@phosphor-icons/react";
 import Link from "next/link";
 
 const signUpSchema = z.object({
@@ -20,14 +20,22 @@ const signUpSchema = z.object({
   acceptTerms: z.boolean().refine((val) => val === true, "You must accept the Terms & Conditions"),
 });
 
+const verificationCodeSchema = z.object({
+  code: z.string().length(6, "Verification code must be 6 digits").regex(/^\d{6}$/, "Code must be 6 digits"),
+});
+
 type SignUpValues = z.infer<typeof signUpSchema>;
+type VerificationValues = z.infer<typeof verificationCodeSchema>;
 
 export function SignUpForm() {
-  const { signUp } = useSignUp();
-  const { isLoaded } = useAuth();
+  const { signUp, isLoaded, setActive } = useSignUp();
   const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pendingVerification, setPendingVerification] = useState(false);
+  const [verificationEmail, setVerificationEmail] = useState("");
+  const [resendTimer, setResendTimer] = useState(60);
+  const [isResending, setIsResending] = useState(false);
 
   const {
     register,
@@ -43,8 +51,28 @@ export function SignUpForm() {
     },
   });
 
+  const {
+    register: registerVerification,
+    handleSubmit: handleVerificationSubmit,
+    formState: { errors: verificationErrors },
+  } = useForm<VerificationValues>({
+    resolver: zodResolver(verificationCodeSchema),
+    mode: "onChange",
+  });
+
   const acceptTerms = watch("acceptTerms");
   const isValid = Object.keys(errors).length === 0 && acceptTerms;
+
+  // Countdown timer for resending code
+  useEffect(() => {
+    if (!pendingVerification || resendTimer <= 0) return;
+    
+    const timer = setInterval(() => {
+      setResendTimer((prev) => prev - 1);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [pendingVerification, resendTimer]);
 
   const onSubmit = async (values: SignUpValues) => {
     if (!isLoaded || !signUp) return;
@@ -52,16 +80,37 @@ export function SignUpForm() {
     setIsSubmitting(true);
 
     try {
-      await signUp.create({
+      // Create the sign-up
+      const result = await signUp.create({
         emailAddress: values.email,
         password: values.password,
         firstName: values.firstName,
         lastName: values.lastName,
       });
 
-      // After sign-up creation, redirect to sign-in with verification prompt
-      // Clerk requires email verification before a session is created
-      router.push("/sign-in?verify_email=true");
+      if (result.status === "complete") {
+        // Email verification is not required, complete the sign-up
+        await setActive({ session: result.createdSessionId });
+        router.push("/dashboard");
+        return;
+      }
+
+      if (result.status === "missing_requirements") {
+        // Check if email verification is needed
+        const missingEmailVerification = result.requiredFields?.includes("email_address") ||
+          result.unverifiedFields?.includes("email_address");
+
+        if (missingEmailVerification) {
+          // Prepare email verification
+          await signUp.prepareEmailAddressVerification({
+            strategy: "email_code",
+          });
+          
+          setVerificationEmail(values.email);
+          setPendingVerification(true);
+          return;
+        }
+      }
     } catch (err: any) {
       setServerError(err.errors?.[0]?.message || "An unexpected error occurred");
     } finally {
@@ -69,6 +118,116 @@ export function SignUpForm() {
     }
   };
 
+  const onVerificationSubmit = async (values: VerificationValues) => {
+    if (!isLoaded || !signUp) return;
+    setServerError(null);
+    setIsSubmitting(true);
+
+    try {
+      // Attempt to verify the email code
+      const result = await signUp.attemptEmailAddressVerification({
+        code: values.code,
+      });
+
+      if (result.status === "complete") {
+        // Verification successful, activate the session
+        await setActive({ session: result.createdSessionId });
+        router.push("/dashboard");
+        return;
+      }
+
+      // If not complete, something is still missing
+      setServerError("Verification incomplete. Please try again.");
+    } catch (err: any) {
+      setServerError(err.errors?.[0]?.message || "Invalid verification code. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleResendCode = async () => {
+    if (!isLoaded || !signUp) return;
+    setIsResending(true);
+    setServerError(null);
+
+    try {
+      await signUp.prepareEmailAddressVerification({
+        strategy: "email_code",
+      });
+      setResendTimer(60);
+    } catch (err: any) {
+      setServerError(err.errors?.[0]?.message || "Failed to resend code. Please try again.");
+    } finally {
+      setIsResending(false);
+    }
+  };
+
+  // Show verification UI
+  if (pendingVerification) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center space-y-2">
+          <div className="flex justify-center mb-4">
+            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+              <Envelope className="w-6 h-6 text-primary" />
+            </div>
+          </div>
+          <h3 className="text-lg font-semibold text-text-primary">Verify your email</h3>
+          <p className="text-sm text-text-secondary">
+            We&apos;ve sent a verification code to <span className="font-medium text-text-primary">{verificationEmail}</span>
+          </p>
+        </div>
+
+        <form onSubmit={handleVerificationSubmit(onVerificationSubmit)} className="space-y-4">
+          <Input
+            label="Verification Code"
+            type="text"
+            inputMode="numeric"
+            maxLength={6}
+            placeholder="000000"
+            {...registerVerification("code")}
+            error={verificationErrors.code?.message}
+            className="text-center tracking-widest text-lg"
+            autoComplete="one-time-code"
+          />
+
+          {serverError && (
+            <div className="p-3 text-sm text-error bg-error/10 border border-error/20 rounded-md animate-slide-up">
+              {serverError}
+            </div>
+          )}
+
+          <Button type="submit" className="w-full" loading={isSubmitting} disabled={isSubmitting}>
+            Verify Email
+          </Button>
+        </form>
+
+        <div className="text-center space-y-2">
+          <p className="text-sm text-text-secondary">
+            Didn&apos;t receive the code?{" "}
+            {resendTimer > 0 ? (
+              <span className="text-text-tertiary">Resend in {resendTimer}s</span>
+            ) : (
+              <button
+                onClick={handleResendCode}
+                disabled={isResending}
+                className="text-primary font-medium hover:underline disabled:opacity-50"
+              >
+                {isResending ? "Sending..." : "Resend code"}
+              </button>
+            )}
+          </p>
+          <p className="text-sm text-text-secondary">
+            <Link href="/sign-in" className="text-primary font-medium hover:underline">
+              Back to sign in
+            </Link>
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show sign-up form
   return (
     <div className="space-y-6">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
