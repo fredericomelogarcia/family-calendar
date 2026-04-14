@@ -68,12 +68,12 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${nunito.variable} ${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
+        className={`${nunito.variable} ${inter.variable} ${jetbrainsMono.variable} min-h-dvh antialiased`}
       >
         <AuthProvider>
         <ThemeProvider>
           <SidebarProvider>
-          <div className="flex h-full">
+          <div className="flex min-h-dvh">
             {/* Sidebar - Desktop */}
             <Sidebar />
             

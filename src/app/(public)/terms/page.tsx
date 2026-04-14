@@ -1,4 +1,6 @@
 import Link from "next/link";
+import Image from "next/image";
+import { SiteFooter } from "@/components/layout/site-footer";
 
 export const metadata = {
   title: "Terms & Conditions — Zawly Calendar",
@@ -7,15 +9,15 @@ export const metadata = {
 
 export default function TermsPage() {
   return (
-    <div className="min-h-screen bg-background text-text-primary selection:bg-primary-light">
+    <div className="min-h-full bg-background text-text-primary selection:bg-primary-light flex flex-col">
       <nav className="px-6 py-4 flex justify-between items-center border-b border-border bg-surface/80 backdrop-blur-sm sticky top-0 z-10">
         <Link href="/" className="flex items-center gap-2">
-          <img
+          <Image
             src="/icons/icon-192.png"
             alt="Zawly Logo"
             width={28}
             height={28}
-            className="w-7 h-7 rounded-md"
+            className="rounded-md"
           />
           <span className="font-bold font-[family-name:var(--font-heading)]">Zawly</span>
         </Link>
@@ -27,7 +29,7 @@ export default function TermsPage() {
         </Link>
       </nav>
 
-      <article className="max-w-2xl mx-auto px-6 py-12 md:py-16">
+      <article className="max-w-2xl mx-auto px-6 py-12 md:py-16 flex-grow">
         <h1 className="text-3xl md:text-4xl font-bold font-[family-name:var(--font-heading)] mb-2">
           Terms &amp; Conditions
         </h1>
@@ -39,7 +41,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-lg font-bold text-text-primary mb-3">1. Acceptance of Terms</h2>
             <p>
-              By accessing or using Zawly Calendar ("the Service"), you agree to be bound by these Terms and Conditions.
+              By accessing or using Zawly Calendar (&quot;the Service&quot;), you agree to be bound by these Terms and Conditions.
               If you do not agree with any part of these terms, you may not use the Service. These terms apply to
               all visitors, users, and others who access Zawly Calendar.
             </p>
@@ -108,8 +110,8 @@ export default function TermsPage() {
             <ul className="list-disc list-inside mt-2 space-y-1">
               <li>Share content that is unlawful, harmful, threatening, or harassing</li>
               <li>Impersonate another person or misrepresent your affiliation</li>
-              <li>Attempt to gain unauthorized access to another user's account</li>
-              <li>Interfere with or disrupt the Service's infrastructure</li>
+              <li>Attempt to gain unauthorized access to another user&apos;s account</li>
+              <li>Interfere with or disrupt the Service&apos;s infrastructure</li>
               <li>Use the Service for any automated or commercial purpose without permission</li>
               <li>Reverse engineer, decompile, or otherwise attempt to extract the source code</li>
             </ul>
@@ -118,13 +120,13 @@ export default function TermsPage() {
           <section>
             <h2 className="text-lg font-bold text-text-primary mb-3">7. Availability &amp; Modifications</h2>
             <p>
-              Zawly Calendar is provided "as is" and "as available." We do not guarantee uninterrupted access, and
+              Zawly Calendar is provided &quot;as is&quot; and &quot;as available.&quot; We do not guarantee uninterrupted access, and
               we may modify, suspend, or discontinue the Service at any time. We will make reasonable efforts
               to notify users of significant changes.
             </p>
             <p className="mt-3">
               We may update these Terms from time to time. Continued use of the Service after changes are
-              posted constitutes acceptance of the revised terms. We will indicate the "Last updated" date
+              posted constitutes acceptance of the revised terms. We will indicate the &quot;Last updated&quot; date
               at the top of this page whenever revisions are made.
             </p>
           </section>
@@ -180,6 +182,8 @@ export default function TermsPage() {
           </Link>
         </div>
       </article>
+
+      <SiteFooter />
     </div>
   );
 }

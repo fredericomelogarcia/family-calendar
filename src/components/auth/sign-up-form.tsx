@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useSignUp } from "@clerk/nextjs";
+import { useSignUp, useAuth } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -24,14 +24,17 @@ type SignUpValues = z.infer<typeof signUpSchema>;
 
 export function SignUpForm() {
   const { signUp } = useSignUp();
+  const { isLoaded } = useAuth();
   const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
     register,
     handleSubmit,
     control,
-    formState: { errors, isValid },
+    watch,
+    formState: { errors },
   } = useForm<SignUpValues>({
     resolver: zodResolver(signUpSchema),
     mode: "onChange",
@@ -40,8 +43,14 @@ export function SignUpForm() {
     },
   });
 
+  const acceptTerms = watch("acceptTerms");
+  const isValid = Object.keys(errors).length === 0 && acceptTerms;
+
   const onSubmit = async (values: SignUpValues) => {
+    if (!isLoaded || !signUp) return;
     setServerError(null);
+    setIsSubmitting(true);
+
     try {
       await signUp.create({
         emailAddress: values.email,
@@ -50,9 +59,13 @@ export function SignUpForm() {
         lastName: values.lastName,
       });
 
+      // After sign-up creation, redirect to sign-in with verification prompt
+      // Clerk requires email verification before a session is created
       router.push("/sign-in?verify_email=true");
     } catch (err: any) {
       setServerError(err.errors?.[0]?.message || "An unexpected error occurred");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -99,7 +112,7 @@ export function SignUpForm() {
             <Checkbox
               id="accept-terms"
               checked={field.value}
-              onChange={field.onChange}
+              onChange={(checked) => field.onChange(checked)}
               error={errors.acceptTerms?.message}
               label={
                 <>
@@ -108,7 +121,6 @@ export function SignUpForm() {
                     href="/terms"
                     target="_blank"
                     className="text-primary font-semibold hover:underline"
-                    onClick={(e) => e.stopPropagation()}
                   >
                     Terms &amp; Conditions
                   </Link>{" "}
@@ -117,7 +129,6 @@ export function SignUpForm() {
                     href="/privacy"
                     target="_blank"
                     className="text-primary font-semibold hover:underline"
-                    onClick={(e) => e.stopPropagation()}
                   >
                     Privacy Policy
                   </Link>
@@ -133,7 +144,7 @@ export function SignUpForm() {
           </div>
         )}
 
-        <Button type="submit" className="w-full" loading={false} disabled={!isValid}>
+        <Button type="submit" className="w-full" loading={isSubmitting} disabled={!isValid || isSubmitting}>
           Create Account
         </Button>
       </form>

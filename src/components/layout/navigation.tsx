@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
@@ -89,7 +90,7 @@ export function Sidebar() {
         isCollapsed ? "justify-center px-0" : "gap-3 px-6"
       )}>
         <div className="w-10 h-10 rounded-[--radius-md] bg-primary flex items-center justify-center flex-shrink-0 overflow-hidden">
-          <img src="/icons/icon-192.png" alt="Zawly" className="w-full h-full object-cover rounded-[--radius-md]" />
+          <Image src="/icons/icon-192.png" alt="Zawly" width={40} height={40} className="rounded-[--radius-md]" />
         </div>
         {!isCollapsed && (
           <span className="text-xl font-bold font-[family-name:var(--font-heading)] text-text-primary whitespace-nowrap">

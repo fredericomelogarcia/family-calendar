@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { 
@@ -11,6 +12,7 @@ import {
   Clock,
   ArrowRight
 } from "@phosphor-icons/react/dist/ssr";
+import { SiteFooter } from "@/components/layout/site-footer";
 
 export default async function HomePage() {
   const { userId } = await auth();
@@ -21,12 +23,18 @@ export default async function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-text-primary selection:bg-primary-light flex flex-col">
+    <div className="min-h-full bg-background text-text-primary selection:bg-primary-light flex flex-col">
       {/* Navigation */}
       <nav className="fixed top-0 w-full z-50 px-6 py-4 flex justify-between items-center backdrop-blur-sm bg-background/80 border-b border-border">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg overflow-hidden shadow-sm">
-            <img src="/icons/icon-192.png" alt="Zawly" className="w-full h-full object-cover rounded-lg" />
+            <Image
+              src="/icons/icon-192.png"
+              alt="Zawly"
+              width={32}
+              height={32}
+              className="rounded-lg"
+            />
           </div>
           <span className="font-bold text-lg font-[family-name:var(--font-heading)]">Zawly</span>
         </div>
@@ -50,12 +58,12 @@ export default async function HomePage() {
         {/* Hero Section */}
         <section className="px-6 max-w-5xl mx-auto text-center mb-12 animate-fade-in">
           <h1 className="text-5xl md:text-6xl font-bold font-[family-name:var(--font-heading)] mb-4 leading-tight">
-            Your family's rhythm, <br />
+            Your family&apos;s rhythm, <br />
             <span className="text-primary">perfectly in sync.</span>
           </h1>
           
           <p className="text-lg md:text-xl text-text-secondary mb-8 max-w-2xl mx-auto">
-            Stop the "who is doing what" chaos. Zawly Calendar is a warm, mobile-first shared calendar 
+            Stop the &quot;who is doing what&quot; chaos. Zawly Calendar is a warm, mobile-first shared calendar 
             designed to keep your household organized and connected.
           </p>
           
@@ -114,18 +122,18 @@ export default async function HomePage() {
             <div className="bg-surface rounded-[calc(1.5rem-4px)] p-6 md:p-10 text-center">
               <h2 className="text-2xl md:text-3xl font-bold mb-3">Zero stress, zero cost.</h2>
               <p className="text-md text-text-secondary mb-6 max-w-lg mx-auto">
-                We believe organizing your family life shouldn't come with a monthly subscription. 
-                That's why Zawly Calendar is completely free.
+                We believe organizing your family life shouldn&apos;t come with a monthly subscription. 
+                That&apos;s why Zawly Calendar is completely free.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pb-8">
-            <Link
-              href="/sign-up"
-              className="group w-full sm:w-auto px-8 py-3 rounded-xl bg-primary text-white font-bold text-lg hover:bg-primary-dark transition-all active:scale-95 shadow-lg flex items-center justify-center gap-2"
-            >
-              Start Your Family Calendar
-              <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-            </Link>
-          </div>
+                <Link
+                  href="/sign-up"
+                  className="group w-full sm:w-auto px-8 py-3 rounded-xl bg-primary text-white font-bold text-lg hover:bg-primary-dark transition-all active:scale-95 shadow-lg flex items-center justify-center gap-2"
+                >
+                  Start Your Family Calendar
+                  <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                </Link>
+              </div>
               <div className="inline-block px-6 py-2 rounded-full bg-surface-alt border border-border font-bold text-text-primary text-lg">
                 Free forever
               </div>
@@ -134,14 +142,7 @@ export default async function HomePage() {
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className="px-6 py-12 border-t border-border bg-surface-alt/50">
-        <div className="flex flex-row justify-center">
-          <p className="text-sm text-text-tertiary">
-            © {new Date().getFullYear()} Zawly Calendar. Built with ❤️ for families everywhere.
-          </p>
-          </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

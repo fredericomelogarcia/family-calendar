@@ -1,4 +1,6 @@
 import Link from "next/link";
+import Image from "next/image";
+import { SiteFooter } from "@/components/layout/site-footer";
 
 export const metadata = {
   title: "Privacy Policy — Zawly Calendar",
@@ -7,15 +9,15 @@ export const metadata = {
 
 export default function PrivacyPage() {
   return (
-    <div className="min-h-screen bg-background text-text-primary selection:bg-primary-light">
+    <div className="min-h-full bg-background text-text-primary selection:bg-primary-light flex flex-col">
       <nav className="px-6 py-4 flex justify-between items-center border-b border-border bg-surface/80 backdrop-blur-sm sticky top-0 z-10">
         <Link href="/" className="flex items-center gap-2">
-          <img
+          <Image
             src="/icons/icon-192.png"
             alt="Zawly Calendar Logo"
             width={28}
             height={28}
-            className="w-7 h-7 rounded-md"
+            className="rounded-md"
           />
           <span className="font-bold font-[family-name:var(--font-heading)]">Zawly</span>
         </Link>
@@ -27,7 +29,7 @@ export default function PrivacyPage() {
         </Link>
       </nav>
 
-      <article className="max-w-2xl mx-auto px-6 py-12 md:py-16">
+      <article className="max-w-2xl mx-auto px-6 py-12 md:py-16 flex-grow">
         <h1 className="text-3xl md:text-4xl font-bold font-[family-name:var(--font-heading)] mb-2">
           Privacy Policy
         </h1>
@@ -164,7 +166,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-bold text-text-primary mb-3">8. Children's Privacy</h2>
+            <h2 className="text-lg font-bold text-text-primary mb-3">8. Children&apos;s Privacy</h2>
             <p>
               Zawly Calendar is designed for family use, but users must be at least 13 years old to create an
               account. We do not knowingly collect personal information from children under 13. If we
@@ -186,7 +188,7 @@ export default function PrivacyPage() {
             <h2 className="text-lg font-bold text-text-primary mb-3">10. Changes to This Policy</h2>
             <p>
               We may update this Privacy Policy from time to time. When we make changes, we will update
-              the "Last updated" date at the top of this page and, for significant changes, we will
+              the &quot;Last updated&quot; date at the top of this page and, for significant changes, we will
               provide additional notice (such as an in-app notification or email). We encourage you to
               review this policy periodically.
             </p>
@@ -209,6 +211,8 @@ export default function PrivacyPage() {
           </Link>
         </div>
       </article>
+
+      <SiteFooter />
     </div>
   );
 }
