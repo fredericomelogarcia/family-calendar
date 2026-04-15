@@ -62,8 +62,8 @@ function InviteContent() {
         setFamilyName(data.family?.name || "");
         // Redirect to dashboard after a brief delay
         setTimeout(() => {
-          router.push("/dashboard");
-        }, 2000);
+          window.location.href = "/dashboard"; // Use full page navigation to ensure fresh state
+        }, 1500);
       } else {
         setStatus("error");
         setErrorMessage(data.error || "Failed to accept invitation");
@@ -76,7 +76,7 @@ function InviteContent() {
 
   if (!isLoaded || status === "loading") {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-surface">
+      <div className="flex-1 flex items-center justify-center py-20">
         <div className="text-center">
           <Spinner size={40} className="animate-spin text-primary mx-auto mb-4" />
           <p className="text-text-secondary">Loading...</p>
@@ -87,7 +87,7 @@ function InviteContent() {
 
   if (status === "signin") {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-surface p-6">
+      <div className="flex-1 flex items-center justify-center py-20 px-6">
         <div className="w-full max-w-md text-center">
           <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
             <CalendarCheck size={40} className="text-primary" />
@@ -129,7 +129,7 @@ function InviteContent() {
 
   if (status === "accepting") {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-surface">
+      <div className="flex-1 flex items-center justify-center py-20">
         <div className="text-center">
           <Spinner size={40} className="animate-spin text-primary mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-text-primary mb-2">
@@ -145,7 +145,7 @@ function InviteContent() {
 
   if (status === "success") {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-surface p-6">
+      <div className="flex-1 flex items-center justify-center py-20 p-6">
         <div className="w-full max-w-md text-center">
           <div className="w-20 h-20 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-6">
             <CheckCircle size={40} className="text-success" weight="fill" />
@@ -173,7 +173,7 @@ function InviteContent() {
 
   // Error state
   return (
-    <div className="min-h-screen flex items-center justify-center bg-surface p-6">
+    <div className="flex-1 flex items-center justify-center py-20 p-6">
       <div className="w-full max-w-md text-center">
         <div className="w-20 h-20 rounded-full bg-error/10 flex items-center justify-center mx-auto mb-6">
           <XCircle size={40} className="text-error-dark" weight="fill" />
@@ -206,7 +206,7 @@ function InviteContent() {
 export default function InvitePage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-surface">
+      <div className="flex-1 flex items-center justify-center py-20">
         <div className="text-center">
           <Spinner size={40} className="animate-spin text-primary mx-auto mb-4" />
           <p className="text-text-secondary">Loading...</p>

@@ -10,7 +10,6 @@ import {
   X, 
   Envelope,
   Check,
-  CalendarCheck,
   Spinner
 } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
@@ -154,29 +153,15 @@ export default function OnboardingPage() {
 
   if (!isLoaded) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="flex-1 flex items-center justify-center py-20">
         <Spinner size={32} className="animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-surface flex flex-col">
-      {/* Header */}
-      <header className="p-6 flex items-center justify-between border-b border-border">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-[--radius-md] bg-primary flex items-center justify-center">
-            <CalendarCheck size={20} className="text-white" weight="fill" />
-          </div>
-          <span className="font-bold text-text-primary text-lg">Zawly</span>
-        </div>
-        <div className="text-sm text-text-secondary">
-          {user?.firstName || "Welcome"}!
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="flex-1 flex items-center justify-center p-6">
+    <div className="flex-1 flex flex-col py-10 px-4 sm:px-6">
+      <div className="flex-1 flex items-center justify-center">
         <div className="w-full max-w-md">
           {step === "welcome" && (
             <div className="text-center space-y-8 animate-fade-in">
@@ -367,7 +352,7 @@ export default function OnboardingPage() {
             </div>
           )}
         </div>
-      </main>
+      </div>
 
       {/* Success Modal with Created Invitations */}
       <Modal

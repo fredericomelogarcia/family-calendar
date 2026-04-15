@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuth, useSignUp } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -31,6 +31,8 @@ export function SignUpForm() {
   const { signUp, errors: clerkErrors } = useSignUp();
   const { isLoaded } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectUrl = searchParams.get("redirect_url") || "/onboarding";
   const [serverError, setServerError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pendingVerification, setPendingVerification] = useState(false);
@@ -99,7 +101,10 @@ export function SignUpForm() {
         // Sign-up complete, finalize and redirect
         await signUp.finalize({
           navigate: (url) => {
-            const urlString = typeof url === "string" ? url : "/dashboard";
+            // Use the redirect URL if provided, otherwise use what Clerk provides
+            const urlString = redirectUrl !== "/onboarding" 
+              ? redirectUrl 
+              : (typeof url === "string" ? url : "/dashboard");
             router.push(urlString);
             return Promise.resolve();
           },
@@ -145,7 +150,10 @@ export function SignUpForm() {
         // Verification successful, finalize sign-up
         await signUp.finalize({
           navigate: (url) => {
-            const urlString = typeof url === "string" ? url : "/dashboard";
+            // Use the redirect URL if provided, otherwise use what Clerk provides
+            const urlString = redirectUrl !== "/onboarding" 
+              ? redirectUrl 
+              : (typeof url === "string" ? url : "/dashboard");
             router.push(urlString);
             return Promise.resolve();
           },
