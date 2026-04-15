@@ -215,7 +215,7 @@ export async function POST(request: NextRequest) {
     // Send invitation email via Resend
     try {
       const resend = new Resend(process.env.RESEND_API_KEY);
-      const acceptUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/invitations/accept?token=${token}`;
+      const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL}/invite?token=${token}`;
 
       await resend.emails.send({
         from: process.env.FROM_EMAIL || "Zawly Calendar <invites@zawly.app>",
@@ -235,7 +235,7 @@ export async function POST(request: NextRequest) {
                 <strong style="color: #2D2A28;">${escapeHtml(family?.name || "their family")}</strong> on Zawly.
               </p>
               
-              <a href="${acceptUrl}" 
+              <a href="${inviteUrl}" 
                  style="display: inline-block; background: #7C9A7E; color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px; margin-bottom: 16px;">
                 Accept Invitation
               </a>
@@ -246,7 +246,7 @@ export async function POST(request: NextRequest) {
               
               <p style="margin: 24px 0 0; color: #A09A94; font-size: 12px;">
                 Can't click the button? Copy this link:<br/>
-                <code style="background: #F5F3EF; padding: 4px 8px; border-radius: 4px; word-break: break-all;">${acceptUrl}</code>
+                <code style="background: #F5F3EF; padding: 4px 8px; border-radius: 4px; word-break: break-all;">${inviteUrl}</code>
               </p>
             </div>
             

@@ -160,7 +160,7 @@ export async function POST(request: NextRequest) {
           // Send invitation email
           try {
             const resend = new Resend(process.env.RESEND_API_KEY);
-            const acceptUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/invitations/accept?token=${token}`;
+            const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL}/invite?token=${token}`;
             const client = await clerkClient();
             const inviter = await client.users.getUser(userId);
             const inviterName = inviter.fullName || inviter.username || "Someone";
@@ -180,7 +180,7 @@ export async function POST(request: NextRequest) {
                       <strong style="color: #2D2A28;">${escapeHtml(inviterName)}</strong> has invited you to join 
                       <strong style="color: #2D2A28;">${escapeHtml(familyName)}</strong> on Zawly.
                     </p>
-                    <a href="${acceptUrl}" 
+                    <a href="${inviteUrl}" 
                        style="display: inline-block; background: #7C9A7E; color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px; margin-bottom: 16px;">
                       Accept Invitation
                     </a>
@@ -189,7 +189,7 @@ export async function POST(request: NextRequest) {
                     </p>
                     <p style="margin: 24px 0 0; color: #A09A94; font-size: 12px;">
                       Can't click the button? Copy this link:<br/>
-                      <code style="background: #F5F3EF; padding: 4px 8px; border-radius: 4px; word-break: break-all;">${acceptUrl}</code>
+                      <code style="background: #F5F3EF; padding: 4px 8px; border-radius: 4px; word-break: break-all;">${inviteUrl}</code>
                     </p>
                   </div>
                   <p style="text-align: center; color: #A09A94; font-size: 12px; margin-top: 16px;">
@@ -204,7 +204,7 @@ export async function POST(request: NextRequest) {
 
           createdInvitations.push({
             ...invitation,
-            acceptUrl: `${process.env.NEXT_PUBLIC_APP_URL}/api/invitations/accept?token=${token}`,
+            inviteUrl: `${process.env.NEXT_PUBLIC_APP_URL}/invite?token=${token}`,
           });
         } catch (err) {
           console.error(`Failed to create invitation for ${email}:`, err);

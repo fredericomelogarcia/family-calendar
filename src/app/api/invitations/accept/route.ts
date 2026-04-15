@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL("/dashboard?error=invitation_expired", request.url));
     }
 
-    // Check if user is already in a family
+    // Check if user exists in our database, create if not (first time login)
     const existingUser = await db.query.users.findFirst({
       where: eq(users.id, userId),
       columns: { familyId: true },
@@ -65,19 +65,28 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL("/dashboard?error=family_not_found", request.url));
     }
 
-    // Update invitation status and user
-    await Promise.all([
-      db.update(invitations)
-        .set({ 
-          status: "accepted", 
-          acceptedAt: new Date(),
-          updatedAt: new Date() 
-        })
-        .where(eq(invitations.id, invitation.id)),
-      db.update(users)
+    // If user doesn't exist in DB, create them first
+    if (!existingUser) {
+      await db.insert(users).values({
+        id: userId,
+        familyId: invitation.familyId,
+        role: "member",
+      });
+    } else {
+      // Update user to join family
+      await db.update(users)
         .set({ familyId: invitation.familyId, role: "member" })
-        .where(eq(users.id, userId)),
-    ]);
+        .where(eq(users.id, userId));
+    }
+
+    // Update invitation status
+    await db.update(invitations)
+      .set({ 
+        status: "accepted", 
+        acceptedAt: new Date(),
+        updatedAt: new Date() 
+      })
+      .where(eq(invitations.id, invitation.id));
 
     return NextResponse.redirect(new URL("/dashboard?success=joined_family", request.url));
   } catch (error) {
