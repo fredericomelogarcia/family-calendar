@@ -113,9 +113,21 @@
   --font-mono: var(--font-mono);
 }
 
-/* CSS containment for performance - prevents layout recalcs from affecting entire page */
+/* CSS containment for performance */
 .contain-layout {
   contain: layout style paint;
+}
+
+/* Critical CSS for above-fold content */
+.fonts-loading {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+}
+
+/* Override for landing page - use system fonts immediately */
+.landing-page h1,
+.landing-page h2,
+.landing-page .logo-text {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 /* Base styles */
@@ -123,7 +135,9 @@
   box-sizing: border-box;
 }
 
+/* Prevent FOIT (Flash of Invisible Text) */
 html {
+  font-family: var(--font-body);
   scroll-behavior: smooth;
 }
 
