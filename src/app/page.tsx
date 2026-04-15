@@ -13,7 +13,7 @@ export default async function HomePage() {
     <div className="min-h-full flex flex-col bg-background">
       <nav className="fixed top-0 w-full z-50 px-6 py-4 flex justify-between items-center bg-background border-b border-border">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center" aria-label="Zawly logo">
             <span className="text-white font-bold text-sm">Z</span>
           </div>
           <span className="font-bold text-lg text-text-primary">Zawly</span>
@@ -51,17 +51,17 @@ export default async function HomePage() {
           <div className="grid md:grid-cols-3 gap-6">
             <div className="p-6 rounded-3xl bg-surface border border-border shadow-sm hover:shadow-md transition-shadow">
               <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary mb-4">📱</div>
-              <h3 className="text-lg font-bold mb-2 text-text-primary">Mobile First</h3>
+              <h2 className="text-lg font-bold mb-2 text-text-primary">Mobile First</h2>
               <p className="text-text-secondary text-sm">Designed for the kitchen tablet or the pocket. Access your family schedule anywhere, instantly.</p>
             </div>
             <div className="p-6 rounded-3xl bg-surface border border-border shadow-sm hover:shadow-md transition-shadow">
               <div className="w-10 h-10 rounded-2xl bg-secondary/10 flex items-center justify-center text-secondary mb-4">👨‍👩‍👧‍👦</div>
-              <h3 className="text-lg font-bold mb-2 text-text-primary">Shared Harmony</h3>
+              <h2 className="text-lg font-bold mb-2 text-text-primary">Shared Harmony</h2>
               <p className="text-text-secondary text-sm">One source of truth for everyone. No more fragmented texts or forgotten appointments.</p>
             </div>
             <div className="p-6 rounded-3xl bg-surface border border-border shadow-sm hover:shadow-md transition-shadow">
               <div className="w-10 h-10 rounded-2xl bg-accent/10 flex items-center justify-center text-accent mb-4">⚡</div>
-              <h3 className="text-lg font-bold mb-2 text-text-primary">Effortless Setup</h3>
+              <h2 className="text-lg font-bold mb-2 text-text-primary">Effortless Setup</h2>
               <p className="text-text-secondary text-sm">Get your family onboarded in seconds. Simple invites that even the kids can learn to use.</p>
             </div>
           </div>
