@@ -29,10 +29,10 @@ interface PlanCardProps {
   description: string | null;
   isCurrentPlan: boolean;
   isPendingCancellation: boolean;
+  cancellationExpiryDate?: string | null;
   isDefault: boolean;
   planId?: string;
   planPeriod?: "month" | "annual";
-  onSubscribe?: () => void;
   onCancel?: () => void;
   isLoading: boolean;
   onSubscriptionComplete?: () => void;
@@ -47,10 +47,10 @@ function PlanCard({
   description,
   isCurrentPlan,
   isPendingCancellation,
+  cancellationExpiryDate,
   isDefault,
   planId,
   planPeriod,
-  onSubscribe,
   onCancel,
   isLoading,
   onSubscriptionComplete,
@@ -84,16 +84,18 @@ function PlanCard({
       {/* Cancelling badge */}
       {isPendingCancellation && (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-[--radius-full] bg-text-tertiary text-white text-xs font-semibold shadow-sm">
-            Cancelling
+          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-[--radius-full] bg-text-tertiary text-white text-xs font-semibold shadow-sm whitespace-nowrap">
+            {cancellationExpiryDate 
+              ? `Active until ${new Date(cancellationExpiryDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+              : 'Cancelling'}
           </span>
         </div>
       )}
 
       {/* Plan name */}
-      <h3 className="text-lg font-bold font-[family-name:var(--font-heading)] text-text-primary">
+      <h2 className="text-lg font-bold font-[family-name:var(--font-heading)] text-text-primary">
         {name}
-      </h3>
+      </h2>
 
       {/* Description */}
       {description && (
@@ -107,19 +109,12 @@ function PlanCard({
         <span className="text-4xl font-bold font-[family-name:var(--font-heading)] text-text-primary">
           {currencySymbol || "$"}{price !== null ? (price === 0 ? 0 : priceFormatted || price) : 0}
         </span>
-        {period && !isFree && (
-          <div className="flex flex-col ml-1">
-            <span className="text-sm text-text-secondary font-medium">
-              /{period}
-            </span>
-          </div>
-        )}
       </div>
 
       {/* Sub-description under price */}
       {!isFree ? (
         <p className="mt-1 text-xs text-text-tertiary text-center">
-          Only billed {period === "annual" ? "annually" : "monthly"}
+          Billed {period === "annual" ? "annually" : "monthly"}
         </p>
       ) : (
         <p className="mt-1 text-xs text-transparent">&nbsp;</p>
@@ -135,16 +130,23 @@ function PlanCard({
             Always free
           </div>
         ) : isPendingCancellation ? (
-          <Button
-            variant="primary"
-            size="md"
-            onClick={onSubscribe}
-            loading={isLoading}
-            className="w-full"
-          >
-            <ArrowCounterClockwise size={16} />
-            Resubscribe
-          </Button>
+          <Show when="signed-in">
+            <CheckoutButton
+              planId={planId!}
+              planPeriod={planPeriod!}
+              onSubscriptionComplete={onSubscriptionComplete}
+              newSubscriptionRedirectUrl="/support"
+            >
+              <Button
+                variant="primary"
+                size="md"
+                className="w-full"
+              >
+                <ArrowCounterClockwise size={16} />
+                Resubscribe
+              </Button>
+            </CheckoutButton>
+          </Show>
         ) : isCurrentPlan && !isDefault ? (
           <Button
             variant="secondary"
@@ -200,6 +202,7 @@ export function CustomPricingTable() {
   const [plans, setPlans] = useState<PlanData[]>([]);
   const [subscribedPlanId, setSubscribedPlanId] = useState<string | null>(null);
   const [pendingCancellation, setPendingCancellation] = useState(false);
+  const [cancellationExpiryDate, setCancellationExpiryDate] = useState<string | null>(null);
   const [subscriptionId, setSubscriptionId] = useState<string | null>(null);
   const [dataLoaded, setDataLoaded] = useState(false);
 
@@ -243,16 +246,30 @@ export function CustomPricingTable() {
         if (paidItem) {
           setSubscribedPlanId(paidItem.plan.id);
           // Check if subscription has been cancelled but is still in grace period
-          setPendingCancellation(paidItem.canceledAt !== null);
+          const isCancelled = paidItem.canceledAt !== null;
+          setPendingCancellation(isCancelled);
+          // Store the end date if cancelled - try multiple possible field names
+          // Using 'any' because Clerk's BillingSubscriptionResource doesn't expose all fields
+          const sub = subscription as any;
+          const paid = paidItem as any;
+          const endDate = sub.endDate || 
+                         sub.currentPeriodEnd || 
+                         sub.cancelAt || 
+                         paid.currentPeriodEnd ||
+                         null;
+          console.log("Subscription data:", { isCancelled, endDate, subscription, paidItem });
+          setCancellationExpiryDate(isCancelled ? endDate : null);
         } else {
           setSubscribedPlanId(null);
           setPendingCancellation(false);
+          setCancellationExpiryDate(null);
         }
       } catch {
         // No subscription exists - user is on free plan
         setSubscribedPlanId(null);
         setSubscriptionId(null);
         setPendingCancellation(false);
+        setCancellationExpiryDate(null);
       }
 
       setDataLoaded(true);
@@ -297,12 +314,6 @@ export function CustomPricingTable() {
   const handleSubscriptionComplete = () => {
     fetchData();
     showToast("success", "Thank you for supporting Zawly Calendar! 💚");
-  };
-
-  const handleResubscribe = async (planId: string, period: "month" | "annual") => {
-    // Use CheckoutButton for resubscribe as well
-    // This will be handled by the CheckoutButton component
-    console.log("Resubscribing to plan:", planId, period);
   };
 
   const handleCancel = async () => {
@@ -355,14 +366,10 @@ export function CustomPricingTable() {
           description={plan.description}
           isCurrentPlan={subscribedPlanId === plan.id || (plan.isDefault && !subscribedPlanId)}
           isPendingCancellation={subscribedPlanId === plan.id && pendingCancellation}
+          cancellationExpiryDate={subscribedPlanId === plan.id ? cancellationExpiryDate : null}
           isDefault={plan.isDefault}
           planId={plan.id}
           planPeriod={plan.period || undefined}
-          onSubscribe={
-            plan.isRecurring && subscribedPlanId === plan.id && pendingCancellation
-              ? () => handleResubscribe(plan.id, plan.period || "month")
-              : undefined
-          }
           onCancel={subscribedPlanId === plan.id ? handleCancel : undefined}
           isLoading={isLoading}
           onSubscriptionComplete={handleSubscriptionComplete}

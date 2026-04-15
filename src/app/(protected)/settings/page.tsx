@@ -530,7 +530,7 @@ export default function SettingsPage() {
                 setShowEditNameModal(true);
               }}
               className="p-2 text-text-secondary hover:text-text-primary transition-colors"
-              title="Edit name"
+              aria-label="Edit your name"
             >
               <PencilSimple size={20} />
             </button>
@@ -588,6 +588,7 @@ export default function SettingsPage() {
               <button
                 onClick={() => setShowEditFamilyNameModal(true)}
                 className="p-2 text-text-secondary hover:text-text-primary transition-colors"
+                aria-label="Edit family name"
               >
                 <PencilSimple size={20} />
               </button>
@@ -605,6 +606,7 @@ export default function SettingsPage() {
                 <button
                   onClick={copyInviteCode}
                   className="p-3 rounded-[--radius-sm] bg-surface-alt hover:bg-border transition-colors"
+                  aria-label="Copy invite code to clipboard"
                 >
                   {copied ? (
                     <Check size={20} className="text-success" />
@@ -615,6 +617,7 @@ export default function SettingsPage() {
                 <button
                   onClick={regenerateInviteCode}
                   className="p-3 rounded-[--radius-sm] bg-surface-alt hover:bg-border transition-colors"
+                  aria-label="Generate new invite code"
                   title="Generate new code"
                 >
                   <Trash size={20} className="text-text-secondary" />
@@ -637,7 +640,7 @@ export default function SettingsPage() {
                     <div className="flex items-center gap-2">
                       <p className="font-medium text-text-primary">{member.name}</p>
                       {member.role === "admin" && (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-primary bg-primary/10 px-1.5 py-0.5 rounded-[--radius-sm]">
+                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-primary-dark bg-primary/15 px-1.5 py-0.5 rounded-[--radius-sm]">
                           <Crown size={10} weight="fill" />
                           Admin
                         </span>
@@ -657,7 +660,8 @@ export default function SettingsPage() {
                         setMemberToRemove(member);
                         setShowRemoveMemberModal(true);
                       }}
-                      className="p-2 text-text-tertiary hover:text-error transition-colors"
+                      className="p-2 text-text-tertiary hover:text-error-dark-dark transition-colors"
+                      aria-label="Remove member"
                       title="Remove member"
                     >
                       <UserMinus size={18} />
@@ -676,7 +680,7 @@ export default function SettingsPage() {
                 setSelectedNewAdmin("");
                 setShowLeaveModal(true);
               }}
-              className="w-full justify-start text-error hover:text-error hover:bg-error/10"
+              className="w-full justify-start text-error-dark hover:text-error-dark hover:bg-error/10"
               leftIcon={<SignOut size={18} />}
             >
               Leave Family
@@ -699,7 +703,7 @@ export default function SettingsPage() {
 
       {/* Danger Zone */}
       <section className="mt-8 pt-8 border-t border-border">
-        <h2 className="text-sm font-semibold text-error uppercase tracking-wide mb-3">
+        <h2 className="text-sm font-semibold text-error-dark uppercase tracking-wide mb-3">
           Danger Zone
         </h2>
         <div className="bg-surface rounded-[--radius-md] border border-border overflow-hidden">
@@ -711,9 +715,9 @@ export default function SettingsPage() {
             className="w-full p-4 flex items-center justify-between hover:bg-error/5 transition-colors text-left"
           >
             <div className="flex items-center gap-3">
-              <Warning size={20} className="text-error" />
+              <Warning size={20} className="text-error-dark" />
               <div>
-                <span className="font-medium text-error">Delete Account</span>
+                <span className="font-medium text-error-dark">Delete Account</span>
                 <p className="text-xs text-text-tertiary">Permanently delete your account and all data</p>
               </div>
             </div>
@@ -832,7 +836,7 @@ export default function SettingsPage() {
               />
 
               {passwordServerError && (
-                <div className="p-3 text-sm text-error bg-error/10 border border-error/20 rounded-[--radius-sm] animate-slide-up">
+                <div className="p-3 text-sm text-error-dark bg-error/10 border border-error/20 rounded-[--radius-sm] animate-slide-up">
                   {passwordServerError}
                 </div>
               )}
@@ -871,7 +875,7 @@ export default function SettingsPage() {
               />
 
               {passwordServerError && (
-                <div className="p-3 text-sm text-error bg-error/10 border border-error/20 rounded-[--radius-sm] animate-slide-up">
+                <div className="p-3 text-sm text-error-dark bg-error/10 border border-error/20 rounded-[--radius-sm] animate-slide-up">
                   {passwordServerError}
                 </div>
               )}
@@ -1010,7 +1014,7 @@ export default function SettingsPage() {
             </Button>
           </div>
           {currentUserRole === "admin" && otherMembers.length > 0 && !selectedNewAdmin && (
-            <p className="text-xs text-error text-center">
+            <p className="text-xs text-error-dark text-center">
               Select a new admin to continue
             </p>
           )}
@@ -1029,23 +1033,23 @@ export default function SettingsPage() {
       >
         <div className="space-y-4">
           <div className="p-3 bg-error/10 border border-error/20 rounded-[--radius-sm]">
-            <p className="text-sm text-error font-medium">
+            <p className="text-sm text-error-dark font-medium">
               This action cannot be undone. All your data will be permanently deleted.
             </p>
             {currentUserRole === "admin" && otherMembers.length > 0 && (
-              <p className="text-xs text-error mt-1">
+              <p className="text-xs text-error-dark mt-1">
                 Admin rights will be transferred to {otherMembers[0]?.name}.
               </p>
             )}
             {currentUserRole === "admin" && otherMembers.length === 0 && (
-              <p className="text-xs text-error mt-1">
+              <p className="text-xs text-error-dark mt-1">
                 Your family will also be permanently deleted.
               </p>
             )}
           </div>
           <div>
             <label className="block text-sm font-medium text-text-primary mb-1.5">
-              Type <span className="font-mono font-bold text-error">DELETE</span> to confirm
+              Type <span className="font-mono font-bold text-error-dark">DELETE</span> to confirm
             </label>
             <input
               type="text"

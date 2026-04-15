@@ -207,7 +207,9 @@ export default function CalendarClient({ initialEvents, hasFamily: initialHasFam
               <CaretLeft size={20} className="text-text-primary" />
             </button>
             <div className="flex items-center gap-1 px-2">
+              <label htmlFor="month-select" className="sr-only">Month</label>
               <select 
+                id="month-select"
                 value={currentDate.getMonth()} 
                 onChange={(e) => handleMonthChange(parseInt(e.target.value))}
                 className="bg-transparent font-bold text-lg text-text-primary focus:outline-none cursor-pointer hover:text-primary transition-colors appearance-none pr-4"
@@ -216,7 +218,9 @@ export default function CalendarClient({ initialEvents, hasFamily: initialHasFam
                   <option key={month} value={i} className="bg-surface text-text-primary">{month}</option>
                 ))}
               </select>
+              <label htmlFor="year-select" className="sr-only">Year</label>
               <select 
+                id="year-select"
                 value={currentDate.getFullYear()} 
                 onChange={(e) => handleYearChange(parseInt(e.target.value))}
                 className="bg-transparent font-bold text-lg text-text-primary focus:outline-none cursor-pointer hover:text-primary transition-colors appearance-none pr-4"

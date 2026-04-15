@@ -24,7 +24,7 @@ export function BottomNav() {
 
   return (
     <nav className="fixed bottom-6 left-4 right-4 bg-surface rounded-full border border-border shadow-xl shadow-text-primary/10 safe-area-bottom lg:hidden z-40">
-      <div className="flex items-center justify-around h-14 px-2 relative">
+      <div className="flex items-center justify-around h-16 px-2 relative">
         {navItems.map((item, index) => {
           const isActive = pathname === item.href || 
             (item.href !== "/events/new" && pathname.startsWith(item.href));
@@ -32,9 +32,10 @@ export function BottomNav() {
 
           if (item.isSpecial) {
             return (
-              <div key={`nav-special-${index}`} className="relative w-16 h-16 flex items-center justify-center -mt-14">
+              <div key={`nav-special-${index}`} className="relative w-16 h-16 flex items-center justify-center -mt-16">
                 <Link
                   href={item.href}
+                  aria-label={item.label}
                   className="absolute inset-0 flex items-center justify-center w-16 h-16 rounded-full bg-primary text-white shadow-lg shadow-[0_8px_24px_-4px_rgba(0,0,0,0.55)] hover:bg-primary-dark active:scale-95 transition-all duration-150"
                 >
                   <Icon size={28} weight="bold" />
@@ -47,17 +48,15 @@ export function BottomNav() {
             <Link
               key={`nav-item-${index}`}
               href={item.href}
+              aria-label={item.label}
               className={cn(
-              "flex flex-col items-center justify-center w-14 h-full rounded-full transition-all duration-150",
+              "flex flex-col items-center justify-center w-14 h-14 rounded-full transition-all duration-150",
               isActive 
-                ? "text-primary font-semibold bg-primary/10" 
-                : "text-text-secondary hover:text-text-primary hover:bg-surface-alt"
+                ? "text-primary-dark font-semibold bg-primary/15" 
+                : "text-text-primary hover:text-text-primary hover:bg-surface-alt"
               )}
             >
-              <Icon size={20} weight={isActive ? "fill" : "regular"} />
-              <span className="text-[9px] font-medium mt-0.5 uppercase tracking-wider">
-                {item.label}
-              </span>
+              <Icon size={28} weight={isActive ? "fill" : "regular"} />
             </Link>
           );
         })}
@@ -86,7 +85,7 @@ export function Sidebar() {
         "flex items-center flex-shrink-0 h-16 transition-all duration-200",
         isCollapsed ? "justify-center px-0" : "gap-3 px-6"
       )}>
-        <div className="w-10 h-10 rounded-[--radius-md] bg-primary flex items-center justify-center flex-shrink-0 overflow-hidden">
+        <div className="w-10 h-10 rounded-[--radius-md] flex items-center justify-center flex-shrink-0 overflow-hidden">
           <Image 
             src="/icons/icon-192.png" 
             alt="Zawly" 

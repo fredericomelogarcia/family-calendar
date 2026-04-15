@@ -1,6 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
-import { SiteFooter } from "@/components/layout/site-footer";
 
 export const metadata = {
   title: "Privacy Policy — Zawly Calendar",
@@ -10,25 +8,6 @@ export const metadata = {
 export default function PrivacyPage() {
   return (
     <div className="min-h-full bg-background text-text-primary selection:bg-primary-light flex flex-col">
-      <nav className="px-6 py-4 flex justify-between items-center border-b border-border bg-surface/80 backdrop-blur-sm sticky top-0 z-10">
-        <Link href="/" className="flex items-center gap-2">
-          <Image
-            src="/icons/icon-192.png"
-            alt="Zawly Calendar Logo"
-            width={28}
-            height={28}
-            className="rounded-md"
-          />
-          <span className="font-bold font-[family-name:var(--font-heading)]">Zawly</span>
-        </Link>
-        <Link
-          href="/sign-in"
-          className="px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-all active:scale-95"
-        >
-          Sign In
-        </Link>
-      </nav>
-
       <article className="max-w-2xl mx-auto px-6 py-12 md:py-16 flex-grow">
         <h1 className="text-3xl md:text-4xl font-bold font-[family-name:var(--font-heading)] mb-2">
           Privacy Policy
@@ -211,8 +190,6 @@ export default function PrivacyPage() {
           </Link>
         </div>
       </article>
-
-      <SiteFooter />
     </div>
   );
 }

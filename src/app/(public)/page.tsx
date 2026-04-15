@@ -11,31 +11,7 @@ export default async function HomePage() {
 
   return (
     <div className="min-h-full flex flex-col bg-background">
-      {/* Minimal Navigation */}
-      <nav className="fixed top-0 w-full z-50 px-6 py-4 flex justify-between items-center bg-background border-b border-border">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-            <span className="text-white font-bold text-sm">Z</span>
-          </div>
-          <span className="font-bold text-lg">Zawly</span>
-        </div>
-        <div className="flex gap-3">
-          <Link 
-            href="/sign-in" 
-            className="px-4 py-2 rounded-lg text-sm font-semibold border border-border hover:bg-surface-alt transition-colors"
-          >
-            Sign In
-          </Link>
-          <Link 
-            href="/sign-up" 
-            className="px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors"
-          >
-            Get Started
-          </Link>
-        </div>
-      </nav>
-
-      <main className="flex-grow pt-20">
+      <main className="flex-grow">
         {/* Hero - Original Copy */}
         <section className="px-6 max-w-3xl mx-auto text-center py-16">
           <h1 className="text-5xl md:text-6xl font-bold mb-4 leading-tight text-text-primary">
@@ -117,28 +93,6 @@ export default async function HomePage() {
         </section>
       </main>
 
-      {/* Minimal Footer */}
-      <footer className="px-6 py-12 border-t border-border bg-surface-alt">
-        <div className="max-w-5xl mx-auto flex flex-col items-center gap-3">
-          <p className="text-sm text-text-tertiary">
-            &copy; {new Date().getFullYear()} Zawly Calendar
-          </p>
-          <nav className="flex items-center gap-4">
-            <Link
-              href="/terms"
-              className="text-xs text-text-tertiary hover:text-text-secondary"
-            >
-              Terms & Conditions
-            </Link>
-            <Link
-              href="/privacy"
-              className="text-xs text-text-tertiary hover:text-text-secondary"
-            >
-              Privacy Policy
-            </Link>
-          </nav>
-        </div>
-      </footer>
     </div>
   );
 }

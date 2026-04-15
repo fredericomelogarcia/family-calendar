@@ -56,7 +56,7 @@ const DayCell = memo(function DayCell({
       className={cn(
         "aspect-square lg:aspect-auto lg:h-24 flex flex-col items-center justify-center rounded-[--radius-sm]",
         "transition-colors duration-150 hover:bg-surface-alt active:scale-95 will-change-transform",
-        !isCurrentMonth && "opacity-40",
+        !isCurrentMonth && "text-text-secondary bg-surface-alt/50",
         isSelected && "bg-primary text-white",
         isDayToday && !isSelected && "ring-2 ring-primary ring-inset"
       )}
@@ -65,8 +65,7 @@ const DayCell = memo(function DayCell({
         className={cn(
           "text-sm font-medium",
           isSelected && "text-white",
-          !isCurrentMonth && "text-text-tertiary",
-          !isSelected && isCurrentMonth && "text-text-primary"
+          !isSelected && "text-text-primary"
         )}
       >
         {format(day, "d")}

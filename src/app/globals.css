@@ -18,6 +18,7 @@
   --border: #E8E4DE;
   --border-light: #F0EDE8;
   --error: #D97B6C;
+  --error-dark: #8C3228;
   --success: #6B8E6B;
 
   /* Typography */
@@ -83,6 +84,7 @@
   
   /* Feedback */
   --color-error: var(--error);
+  --color-error-dark: var(--error-dark);
   --color-success: var(--success);
   
   /* Fonts */

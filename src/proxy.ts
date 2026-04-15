@@ -5,10 +5,13 @@ const isPublicRoute = createRouteMatcher([
   "/",
   "/sign-in",
   "/sign-up",
+  "/terms",
+  "/privacy",
   "/api/webhooks/clerk",
   "/favicon.ico",
   "/icons/(.*)",
   "/manifest.json",
+  "/robots.txt"
 ]);
 
 export const proxy = clerkMiddleware((auth, request) => {
