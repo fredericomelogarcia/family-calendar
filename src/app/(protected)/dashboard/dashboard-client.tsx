@@ -296,7 +296,7 @@ export default function DashboardClient({
     return () => clearInterval(interval);
   }, [autoRefreshEnabled, fetchEvents]);
 
-  if (!isLoaded || loading) {
+  if (loading) {
     return (
       <div className="min-h-full flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
@@ -325,8 +325,8 @@ export default function DashboardClient({
       {/* Header */}
       <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold font-[family-name:var(--font-heading)] text-text-primary">
-            Good {getGreeting()}, {user?.firstName || "there"} 👋
+          <h1 className="text-2xl font-bold text-text-primary">
+            Good {getGreeting()}, {isLoaded ? user?.firstName || "there" : "..."} 👋
           </h1>
           <p className="text-sm text-text-secondary mt-1">
             {format(selectedDate, "EEEE, MMMM d, yyyy")}
