@@ -63,6 +63,18 @@ export function isEventOnDay(event: any, day: Date): boolean {
       return nextOccurrence !== null && nextOccurrence.toDateString() === target.toDateString();
     }
 
+    // Handle quadweekly (every 4 weeks) - weekly with interval 4
+    if (event.recurrence === "quadweekly") {
+      const rule = new RRule({
+        freq: RRule.WEEKLY,
+        interval: 4,
+        dtstart: start,
+        until: end || undefined,
+      });
+      const nextOccurrence = rule.after(target, true);
+      return nextOccurrence !== null && nextOccurrence.toDateString() === target.toDateString();
+    }
+
     const freqMap: Record<string, number> = {
       daily: RRule.DAILY,
       weekly: RRule.WEEKLY,
@@ -104,6 +116,11 @@ function directComparison(recurrence: string, start: Date, day: Date): boolean {
       const msPerWeekTri = 7 * 24 * 60 * 60 * 1000;
       const diffWeeksTri = Math.floor((day.getTime() - start.getTime()) / msPerWeekTri);
       return start.getDay() === day.getDay() && diffWeeksTri % 3 === 0;
+    }
+    case "quadweekly": {
+      const msPerWeekQuad = 7 * 24 * 60 * 60 * 1000;
+      const diffWeeksQuad = Math.floor((day.getTime() - start.getTime()) / msPerWeekQuad);
+      return start.getDay() === day.getDay() && diffWeeksQuad % 4 === 0;
     }
     case "monthly":
       return start.getDate() === day.getDate();
