@@ -32,9 +32,9 @@ export default async function CalendarPage() {
     columns: { familyId: true },
   });
 
-  // If no family, return empty state
+  // If no family, redirect to onboarding
   if (!user?.familyId) {
-    return <CalendarClient initialEvents={[]} hasFamily={false} />;
+    redirect("/onboarding");
   }
 
   // Fetch events for current month server-side

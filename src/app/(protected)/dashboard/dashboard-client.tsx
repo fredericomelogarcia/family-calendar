@@ -308,16 +308,9 @@ export default function DashboardClient({
   }
 
   if (hasFamily === false) {
-    return (
-      <div className="min-h-full flex items-center justify-center p-6">
-        {/* FamilySetup is still heavy - could be lazy loaded too */}
-        <div className="text-center">
-          <h2 className="text-xl font-bold text-text-primary mb-2">Welcome to Zawly!</h2>
-          <p className="text-text-secondary mb-4">Please set up your family first.</p>
-          <Button onClick={() => router.push("/dashboard")}>Go to Dashboard</Button>
-        </div>
-      </div>
-    );
+    // Redirect to onboarding if no family
+    router.push("/onboarding");
+    return null;
   }
 
   return (

@@ -32,14 +32,9 @@ export default async function DashboardPage() {
     columns: { familyId: true },
   });
 
-  // If no family, return early with empty state
+  // If no family, redirect to onboarding
   if (!user?.familyId) {
-    return (
-      <DashboardClient 
-        initialEvents={[]}
-        hasFamily={false}
-      />
-    );
+    redirect("/onboarding");
   }
 
   // Fetch events server-side with date range

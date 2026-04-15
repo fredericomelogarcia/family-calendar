@@ -18,6 +18,10 @@ import {
   UserMinus,
   ArrowRight,
   Warning,
+  Envelope,
+  X,
+  PaperPlaneRight,
+  Clock,
 } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,6 +51,15 @@ interface FamilyMember {
   email: string;
   role: string;
   avatar?: string | null;
+}
+
+interface Invitation {
+  id: string;
+  email: string;
+  status: "pending" | "accepted" | "declined" | "expired";
+  createdAt: string;
+  expiresAt: string;
+  inviterName?: string;
 }
 
 interface Family {
@@ -102,6 +115,11 @@ export default function SettingsPage() {
   const [newLastName, setNewLastName] = useState("");
   const [hasFamily, setHasFamily] = useState<boolean | null>(null);
 
+  // Invitation states
+  const [invitations, setInvitations] = useState<Invitation[]>([]);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteLoading, setInviteLoading] = useState(false);
+
   // Loading states
   const [nameLoading, setNameLoading] = useState(false);
   const [familyNameLoading, setFamilyNameLoading] = useState(false);
@@ -128,8 +146,12 @@ export default function SettingsPage() {
 
   const fetchFamilyData = async () => {
     try {
-      const res = await fetch("/api/family");
-      const data = await res.json();
+      const [familyRes, invitesRes] = await Promise.all([
+        fetch("/api/family"),
+        fetch("/api/family/invite"),
+      ]);
+      const data = await familyRes.json();
+      const invitesData = await invitesRes.json().catch(() => ({ invitations: [] }));
 
       if (data.hasFamily) {
         setFamily(data.family);
@@ -137,6 +159,7 @@ export default function SettingsPage() {
         setCurrentUserRole(data.currentUserRole);
         setNewFamilyName(data.family?.name || "");
         setHasFamily(true);
+        setInvitations(invitesData.invitations || []);
       } else {
         setHasFamily(false);
       }
@@ -158,7 +181,7 @@ export default function SettingsPage() {
 
   const regenerateInviteCode = async () => {
     try {
-      const res = await fetch("/api/family/invite", { method: "POST" });
+      const res = await fetch("/api/family/invite-code", { method: "POST" });
       const data = await res.json();
 
       if (data.inviteCode) {
@@ -167,6 +190,76 @@ export default function SettingsPage() {
       }
     } catch (error) {
       showToast("error", "Failed to regenerate invite code");
+    }
+  };
+
+  // Send email invitation
+  const sendInvitation = async () => {
+    if (!inviteEmail.trim() || !inviteEmail.includes("@")) {
+      showToast("error", "Please enter a valid email address");
+      return;
+    }
+
+    // Check if family is full
+    if (members.length + invitations.length >= MAX_FAMILY_MEMBERS) {
+      showToast("error", `Family is full (max ${MAX_FAMILY_MEMBERS} members)`);
+      return;
+    }
+
+    // Check if email already invited
+    if (invitations.some((inv) => inv.email.toLowerCase() === inviteEmail.toLowerCase().trim())) {
+      showToast("error", "This email has already been invited");
+      return;
+    }
+
+    // Check if email is already a member
+    if (members.some((m) => m.email?.toLowerCase() === inviteEmail.toLowerCase().trim())) {
+      showToast("error", "This person is already in your family");
+      return;
+    }
+
+    setInviteLoading(true);
+    try {
+      const res = await fetch("/api/family/invite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: inviteEmail.trim() }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setInvitations((prev) => [...prev, data.invitation]);
+        setInviteEmail("");
+        showToast("success", `Invitation sent to ${data.invitation.email}`);
+      } else {
+        const data = await res.json();
+        showToast("error", data.error || "Failed to send invitation");
+      }
+    } catch (error) {
+      showToast("error", "Failed to send invitation");
+    } finally {
+      setInviteLoading(false);
+    }
+  };
+
+  // Cancel an invitation
+  const cancelInvitation = async (invitationId: string, email: string) => {
+    try {
+      const res = await fetch("/api/family/invitations", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ invitationId }),
+      });
+
+      if (res.ok) {
+        setInvitations((prev) => prev.filter((inv) => inv.id !== invitationId));
+        showToast("success", `Invitation to ${email} cancelled`);
+      } else {
+        const data = await res.json();
+        showToast("error", data.error || "Failed to cancel invitation");
+      }
+    } catch (error) {
+      showToast("error", "Failed to cancel invitation");
     }
   };
 
@@ -419,7 +512,8 @@ export default function SettingsPage() {
 
       if (res.ok) {
         showToast("success", "You have left the family");
-        signOut().then(() => router.push("/"));
+        // Redirect to onboarding to create/join a new family
+        router.push("/onboarding");
       } else {
         const data = await res.json();
         showToast("error", data.error || "Failed to leave family");
@@ -481,21 +575,9 @@ export default function SettingsPage() {
   }
 
   if (hasFamily === false) {
-    return (
-      <div className="min-h-full flex items-center justify-center p-6">
-        <div className="text-center">
-          <h2 className="text-xl font-bold text-text-primary mb-2">
-            No Family Found
-          </h2>
-          <p className="text-text-secondary mb-4">
-            Please set up your family first.
-          </p>
-          <Button onClick={() => router.push("/dashboard")}>
-            Go to Dashboard
-          </Button>
-        </div>
-      </div>
-    );
+    // Redirect to onboarding if no family
+    router.push("/onboarding");
+    return null;
   }
 
   return (
@@ -626,6 +708,85 @@ export default function SettingsPage() {
               <p className="text-xs text-text-tertiary mt-2">
                 Share this code with family members to invite them
               </p>
+            </div>
+          )}
+
+          {/* Invite by Email */}
+          {currentUserRole === "admin" && members.length + invitations.length < MAX_FAMILY_MEMBERS && (
+            <div className="p-4 border-b border-border">
+              <p className="text-sm text-text-secondary mb-2">Invite by Email</p>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 relative">
+                  <Envelope 
+                    size={18} 
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" 
+                  />
+                  <input
+                    type="email"
+                    value={inviteEmail}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && sendInvitation()}
+                    placeholder="family member's email"
+                    className="w-full h-11 pl-10 pr-4 rounded-[--radius-sm] border border-border bg-surface text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm"
+                    disabled={inviteLoading}
+                  />
+                </div>
+                <button
+                  onClick={sendInvitation}
+                  disabled={inviteLoading || !inviteEmail.trim()}
+                  className="h-11 px-4 rounded-[--radius-sm] bg-primary text-white hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                  aria-label="Send invitation"
+                >
+                  {inviteLoading ? (
+                    <div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                  ) : (
+                    <PaperPlaneRight size={18} />
+                  )}
+                  <span className="hidden sm:inline text-sm font-medium">Invite</span>
+                </button>
+              </div>
+              <p className="text-xs text-text-tertiary mt-2">
+                They'll receive a link to join your family
+              </p>
+            </div>
+          )}
+
+          {/* Pending Invitations */}
+          {currentUserRole === "admin" && invitations.length > 0 && (
+            <div className="p-4 border-b border-border">
+              <p className="text-sm text-text-secondary mb-3">
+                Pending Invitations ({invitations.length})
+              </p>
+              <div className="space-y-2">
+                {invitations.map((invitation) => (
+                  <div 
+                    key={invitation.id} 
+                    className="flex items-center gap-3 p-3 rounded-[--radius-sm] bg-surface-alt/50 border border-border"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Envelope size={16} className="text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-text-primary text-sm truncate">
+                        {invitation.email}
+                      </p>
+                      <div className="flex items-center gap-2 text-xs text-text-tertiary">
+                        <Clock size={12} />
+                        <span>Sent {new Date(invitation.createdAt).toLocaleDateString()}</span>
+                        <span className="text-warning">• Pending</span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => cancelInvitation(invitation.id, invitation.email)}
+                      className="p-2 text-text-tertiary hover:text-error-dark transition-colors"
+                      aria-label="Cancel invitation"
+                      title="Cancel invitation"
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 

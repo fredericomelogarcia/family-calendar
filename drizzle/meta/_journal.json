@@ -8,6 +8,13 @@
       "when": 1776161464840,
       "tag": "0000_clear_lila_cheney",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1776253951534,
+      "tag": "0001_quick_bulldozer",
+      "breakpoints": true
     }
   ]
 }

@@ -182,15 +182,9 @@ export default function CalendarClient({ initialEvents, hasFamily: initialHasFam
   }
 
   if (!initialHasFamily) {
-    return (
-      <div className="min-h-full flex items-center justify-center p-6">
-        <div className="text-center">
-          <h2 className="text-xl font-bold text-text-primary mb-2">No Family Found</h2>
-          <p className="text-text-secondary mb-4">Please set up your family first.</p>
-          <Button onClick={() => router.push("/dashboard")}>Go to Dashboard</Button>
-        </div>
-      </div>
-    );
+    // Redirect to onboarding if no family
+    router.push("/onboarding");
+    return null;
   }
 
   return (

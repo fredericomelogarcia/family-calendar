@@ -20,6 +20,31 @@ export const users = pgTable("users", {
   index("idx_users_family_id").on(table.familyId),
 ]);
 
+// Invitations table (for email-based invitations)
+export const invitations = pgTable("invitations", {
+  id: text("id").primaryKey(),
+  familyId: text("family_id")
+    .notNull()
+    .references(() => families.id, { onDelete: "cascade" }),
+  email: text("email").notNull(),
+  invitedBy: text("invited_by")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  status: text("status", { enum: ["pending", "accepted", "declined", "expired"] })
+    .notNull()
+    .default("pending"),
+  token: text("token").notNull().unique(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  acceptedAt: timestamp("accepted_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  index("idx_invitations_family_id").on(table.familyId),
+  index("idx_invitations_email").on(table.email),
+  index("idx_invitations_token").on(table.token),
+  index("idx_invitations_status").on(table.status),
+]);
+
 // Events table
 export const events = pgTable("events", {
   id: text("id").primaryKey(),
@@ -49,6 +74,7 @@ export const events = pgTable("events", {
 export const familiesRelations = relations(families, ({ many }) => ({
   users: many(users),
   events: many(events),
+  invitations: many(invitations),
 }));
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -57,6 +83,18 @@ export const usersRelations = relations(users, ({ one, many }) => ({
     references: [families.id],
   }),
   createdEvents: many(events),
+  sentInvitations: many(invitations),
+}));
+
+export const invitationsRelations = relations(invitations, ({ one }) => ({
+  family: one(families, {
+    fields: [invitations.familyId],
+    references: [families.id],
+  }),
+  inviter: one(users, {
+    fields: [invitations.invitedBy],
+    references: [users.id],
+  }),
 }));
 
 export const eventsRelations = relations(events, ({ one }) => ({
@@ -81,3 +119,5 @@ export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Event = typeof events.$inferSelect;
 export type NewEvent = typeof events.$inferInsert;
+export type Invitation = typeof invitations.$inferSelect;
+export type NewInvitation = typeof invitations.$inferInsert;

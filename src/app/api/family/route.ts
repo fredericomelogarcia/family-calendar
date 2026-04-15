@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { users, families } from "@/lib/db/schema";
+import { users, families, invitations } from "@/lib/db/schema";
 import { auth, clerkClient } from "@clerk/nextjs/server";
-import { eq, count } from "drizzle-orm";
-import { generateId, generateInviteCode } from "@/lib/utils";
+import { eq, count, and } from "drizzle-orm";
+import { generateId, generateInviteCode, generateInvitationToken } from "@/lib/utils";
+import { Resend } from "resend";
+
+const MAX_FAMILY_MEMBERS = 6;
+const INVITATION_EXPIRY_DAYS = 7;
 
 // GET /api/family - Get current user's family
 export async function GET() {
@@ -72,11 +76,13 @@ export async function GET() {
       }));
     }
 
+    // Return member count, family, and members
     return NextResponse.json({
       family: user.family,
       members: enrichedMembers,
       hasFamily: true,
       currentUserRole: user.role,
+      memberCount: familyMembers.length,
     });
   } catch (error) {
     console.error("Error fetching family:", error);
@@ -110,6 +116,12 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Family name must be at least 2 characters" }, { status: 400 });
       }
 
+      // Extract inviteEmails from the request
+      const { inviteEmails } = body;
+      const emailsToInvite = Array.isArray(inviteEmails) 
+        ? inviteEmails.filter((e: string) => typeof e === "string" && e.includes("@")).slice(0, MAX_FAMILY_MEMBERS - 1)
+        : [];
+
       const familyId = generateId();
       const code = generateInviteCode();
 
@@ -125,7 +137,86 @@ export async function POST(request: NextRequest) {
         .set({ familyId, role: "admin" })
         .where(eq(users.id, userId));
 
-      return NextResponse.json({ family, action: "created" }, { status: 201 });
+      // Create invitations for provided emails
+      const createdInvitations = [];
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + INVITATION_EXPIRY_DAYS);
+
+      for (const email of emailsToInvite) {
+        try {
+          const invitationId = generateId();
+          const token = generateInvitationToken();
+
+          const [invitation] = await db.insert(invitations).values({
+            id: invitationId,
+            familyId,
+            email: email.toLowerCase(),
+            invitedBy: userId,
+            status: "pending",
+            token,
+            expiresAt,
+          }).returning();
+
+          // Send invitation email
+          try {
+            const resend = new Resend(process.env.RESEND_API_KEY);
+            const acceptUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/invitations/accept?token=${token}`;
+            const client = await clerkClient();
+            const inviter = await client.users.getUser(userId);
+            const inviterName = inviter.fullName || inviter.username || "Someone";
+
+            await resend.emails.send({
+              from: process.env.FROM_EMAIL || "Zawly Calendar <invites@zawly.app>",
+              to: email.toLowerCase(),
+              subject: `${inviterName} invited you to join ${familyName} on Zawly`,
+              html: `
+                <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; background: #FAF9F7; border-radius: 12px;">
+                  <div style="background: #FFFFFF; border-radius: 12px; padding: 32px; border: 1px solid #E8E4DE; text-align: center;">
+                    <div style="width: 64px; height: 64px; background: #7C9A7E; border-radius: 16px; margin: 0 auto 24px; display: flex; align-items: center; justify-content: center;">
+                      <span style="color: white; font-size: 32px;">📅</span>
+                    </div>
+                    <h2 style="margin: 0 0 16px; color: #2D2A28; font-size: 24px; font-weight: 700;">Family Calendar Invitation</h2>
+                    <p style="margin: 0 0 24px; color: #6B6560; font-size: 16px; line-height: 1.6;">
+                      <strong style="color: #2D2A28;">${escapeHtml(inviterName)}</strong> has invited you to join 
+                      <strong style="color: #2D2A28;">${escapeHtml(familyName)}</strong> on Zawly.
+                    </p>
+                    <a href="${acceptUrl}" 
+                       style="display: inline-block; background: #7C9A7E; color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px; margin-bottom: 16px;">
+                      Accept Invitation
+                    </a>
+                    <p style="margin: 16px 0 0; color: #A09A94; font-size: 13px;">
+                      This invitation expires in ${INVITATION_EXPIRY_DAYS} days.
+                    </p>
+                    <p style="margin: 24px 0 0; color: #A09A94; font-size: 12px;">
+                      Can't click the button? Copy this link:<br/>
+                      <code style="background: #F5F3EF; padding: 4px 8px; border-radius: 4px; word-break: break-all;">${acceptUrl}</code>
+                    </p>
+                  </div>
+                  <p style="text-align: center; color: #A09A94; font-size: 12px; margin-top: 16px;">
+                    If you weren't expecting this invitation, you can safely ignore this email.
+                  </p>
+                </div>
+              `,
+            });
+          } catch (emailError) {
+            console.error(`Failed to send invitation email to ${email}:`, emailError);
+          }
+
+          createdInvitations.push({
+            ...invitation,
+            acceptUrl: `${process.env.NEXT_PUBLIC_APP_URL}/api/invitations/accept?token=${token}`,
+          });
+        } catch (err) {
+          console.error(`Failed to create invitation for ${email}:`, err);
+        }
+      }
+
+      return NextResponse.json({ 
+        family, 
+        action: "created",
+        invitations: createdInvitations,
+        invitationCount: createdInvitations.length,
+      }, { status: 201 });
     }
 
     if (action === "join") {
@@ -209,4 +300,13 @@ export async function PATCH(request: NextRequest) {
     console.error("Error updating family:", error);
     return NextResponse.json({ error: "Failed to update family" }, { status: 500 });
   }
+}
+
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }

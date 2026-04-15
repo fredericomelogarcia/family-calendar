@@ -70,24 +70,9 @@ function NewEventContent() {
   }
 
   if (hasFamily === false) {
-    return (
-      <div className="min-h-full flex items-center justify-center p-6">
-        <div className="text-center">
-          <h2 className="text-xl font-bold text-text-primary mb-2">
-            No Family Found
-          </h2>
-          <p className="text-text-secondary mb-4">
-            Please set up your family first.
-          </p>
-          <button
-            onClick={() => router.push("/dashboard")}
-            className="px-4 py-2 bg-primary text-white rounded-[--radius-md] font-medium"
-          >
-            Go to Dashboard
-          </button>
-        </div>
-      </div>
-    );
+    // Redirect to onboarding if no family
+    router.push("/onboarding");
+    return null;
   }
 
   return (
