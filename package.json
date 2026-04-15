@@ -16,6 +16,7 @@
     "@clerk/nextjs": "^7.0.12",
     "@hookform/resolvers": "^5.2.2",
     "@phosphor-icons/react": "^2.1.10",
+    "@sentry/nextjs": "^10.48.0",
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
     "clsx": "^2.1.1",
