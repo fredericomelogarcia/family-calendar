@@ -1,4 +1,4 @@
-import { RRule } from "rrule";
+import { RRule, Weekday } from "rrule";
 
 /**
  * Determines if an event occurs on a specific day.
@@ -10,9 +10,10 @@ export function isEventOnDay(event: any, day: Date): boolean {
   const rawStart = new Date(event.startDate);
   const rawEnd = event.endDate ? new Date(event.endDate) : null;
 
-  // Normalize everything to midnight (date-only) to avoid timezone drift
-  const start = stripTime(rawStart);
-  const end = rawEnd ? stripTime(rawEnd) : null;
+  // CRITICAL: Use UTC date components to preserve the intended day
+  // Event dates are stored in UTC, but we need the same calendar day in local time
+  const start = new Date(rawStart.getUTCFullYear(), rawStart.getUTCMonth(), rawStart.getUTCDate());
+  const end = rawEnd ? new Date(rawEnd.getUTCFullYear(), rawEnd.getUTCMonth(), rawEnd.getUTCDate()) : null;
   const target = stripTime(day);
 
   // Check if this date is excluded
@@ -47,8 +48,9 @@ export function isEventOnDay(event: any, day: Date): boolean {
         dtstart: start,
         until: end || undefined,
       });
+      // Compare using time values to avoid timezone issues
       const nextOccurrence = rule.after(target, true);
-      return nextOccurrence !== null && nextOccurrence.toDateString() === target.toDateString();
+      return nextOccurrence !== null && nextOccurrence.getTime() === target.getTime();
     }
 
     // Handle triweekly (every 3 weeks) - weekly with interval 3
@@ -60,7 +62,7 @@ export function isEventOnDay(event: any, day: Date): boolean {
         until: end || undefined,
       });
       const nextOccurrence = rule.after(target, true);
-      return nextOccurrence !== null && nextOccurrence.toDateString() === target.toDateString();
+      return nextOccurrence !== null && nextOccurrence.getTime() === target.getTime();
     }
 
     // Handle quadweekly (every 4 weeks) - weekly with interval 4
@@ -72,7 +74,7 @@ export function isEventOnDay(event: any, day: Date): boolean {
         until: end || undefined,
       });
       const nextOccurrence = rule.after(target, true);
-      return nextOccurrence !== null && nextOccurrence.toDateString() === target.toDateString();
+      return nextOccurrence !== null && nextOccurrence.getTime() === target.getTime();
     }
 
     const freqMap: Record<string, number> = {
@@ -92,7 +94,7 @@ export function isEventOnDay(event: any, day: Date): boolean {
     });
 
     const nextOccurrence = rule.after(target, true);
-    return nextOccurrence !== null && nextOccurrence.toDateString() === target.toDateString();
+    return nextOccurrence !== null && nextOccurrence.getTime() === target.getTime();
   } catch (err) {
     // Fallback to direct comparison if RRule fails (SSR, bundling issue, etc.)
     console.warn("RRule failed, falling back to direct comparison:", err);
