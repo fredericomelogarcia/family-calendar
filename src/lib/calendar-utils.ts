@@ -51,6 +51,18 @@ export function isEventOnDay(event: any, day: Date): boolean {
       return nextOccurrence !== null && nextOccurrence.toDateString() === target.toDateString();
     }
 
+    // Handle triweekly (every 3 weeks) - weekly with interval 3
+    if (event.recurrence === "triweekly") {
+      const rule = new RRule({
+        freq: RRule.WEEKLY,
+        interval: 3,
+        dtstart: start,
+        until: end || undefined,
+      });
+      const nextOccurrence = rule.after(target, true);
+      return nextOccurrence !== null && nextOccurrence.toDateString() === target.toDateString();
+    }
+
     const freqMap: Record<string, number> = {
       daily: RRule.DAILY,
       weekly: RRule.WEEKLY,
@@ -87,6 +99,11 @@ function directComparison(recurrence: string, start: Date, day: Date): boolean {
       const msPerWeek = 7 * 24 * 60 * 60 * 1000;
       const diffWeeks = Math.floor((day.getTime() - start.getTime()) / msPerWeek);
       return start.getDay() === day.getDay() && diffWeeks % 2 === 0;
+    }
+    case "triweekly": {
+      const msPerWeekTri = 7 * 24 * 60 * 60 * 1000;
+      const diffWeeksTri = Math.floor((day.getTime() - start.getTime()) / msPerWeekTri);
+      return start.getDay() === day.getDay() && diffWeeksTri % 3 === 0;
     }
     case "monthly":
       return start.getDate() === day.getDate();

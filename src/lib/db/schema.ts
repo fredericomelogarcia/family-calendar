@@ -56,7 +56,7 @@ export const events = pgTable("events", {
   endDate: timestamp("end_date", { withTimezone: true }),
   allDay: boolean("all_day").notNull().default(true),
   notes: text("notes"),
-  recurrence: text("recurrence", { enum: ["none", "daily", "weekly", "biweekly", "monthly", "yearly"] }).notNull().default("none"),
+  recurrence: text("recurrence", { enum: ["none", "daily", "weekly", "biweekly", "triweekly", "monthly", "yearly"] }).notNull().default("none"),
   excludedDates: jsonb("excluded_dates").$type<string[] | null>(),
   createdBy: text("created_by")
     .notNull()

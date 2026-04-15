@@ -22,6 +22,7 @@ import {
   X,
   PaperPlaneRight,
   Clock,
+  ArrowClockwise,
 } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -260,6 +261,35 @@ export default function SettingsPage() {
       }
     } catch (error) {
       showToast("error", "Failed to cancel invitation");
+    }
+  };
+
+  // Resend an invitation
+  const resendInvitation = async (invitationId: string, email: string) => {
+    try {
+      const res = await fetch("/api/family/invitations/resend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ invitationId }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        // Update the expiration date in the list
+        setInvitations((prev) =>
+          prev.map((inv) =>
+            inv.id === invitationId
+              ? { ...inv, expiresAt: data.invitation.expiresAt }
+              : inv
+          )
+        );
+        showToast("success", `Invitation resent to ${email}`);
+      } else {
+        const data = await res.json();
+        showToast("error", data.error || "Failed to resend invitation");
+      }
+    } catch (error) {
+      showToast("error", "Failed to resend invitation");
     }
   };
 
@@ -776,14 +806,24 @@ export default function SettingsPage() {
                         <span className="text-warning">• Pending</span>
                       </div>
                     </div>
-                    <button
-                      onClick={() => cancelInvitation(invitation.id, invitation.email)}
-                      className="p-2 text-text-tertiary hover:text-error-dark transition-colors"
-                      aria-label="Cancel invitation"
-                      title="Cancel invitation"
-                    >
-                      <X size={18} />
-                    </button>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => resendInvitation(invitation.id, invitation.email)}
+                        className="p-2 text-text-tertiary hover:text-primary transition-colors"
+                        aria-label="Resend invitation"
+                        title="Resend invitation"
+                      >
+                        <ArrowClockwise size={18} />
+                      </button>
+                      <button
+                        onClick={() => cancelInvitation(invitation.id, invitation.email)}
+                        className="p-2 text-text-tertiary hover:text-error-dark transition-colors"
+                        aria-label="Cancel invitation"
+                        title="Cancel invitation"
+                      >
+                        <X size={18} />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
