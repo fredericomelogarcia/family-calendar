@@ -1,14 +1,10 @@
-import { RRule } from "rrule";
 import { toDateKey, toDateOnly, getDayOfWeek } from "./date-utils";
 
 /**
  * Determines if an event occurs on a specific day.
- * Uses the industry-standard RRule library (RFC 5545), with a
- * direct-comparison fallback if RRule fails for any reason.
- * Respects excludedDates for recurring events.
  * 
- * IMPORTANT: All dates are treated as date-only (no time component).
- * This avoids timezone issues where a date can shift to the previous/next day.
+ * IMPORTANT: Uses simple date math instead of RRule to avoid timezone issues.
+ * All dates are treated as date-only (no time component).
  */
 export function isEventOnDay(event: any, day: Date): boolean {
   // Convert everything to date-only to avoid timezone issues
@@ -33,95 +29,56 @@ export function isEventOnDay(event: any, day: Date): boolean {
     return start.getTime() === target.getTime();
   }
 
-  // Try RRule first, fall back to direct comparison if it fails
-  try {
-    // Handle biweekly specially (weekly with interval 2)
-    if (event.recurrence === "biweekly") {
-      const rule = new RRule({
-        freq: RRule.WEEKLY,
-        interval: 2,
-        dtstart: start,
-        until: end || undefined,
-      });
-      const nextOccurrence = rule.after(target, true);
-      return nextOccurrence !== null && nextOccurrence.getTime() === target.getTime();
-    }
-
-    // Handle triweekly (every 3 weeks) - weekly with interval 3
-    if (event.recurrence === "triweekly") {
-      const rule = new RRule({
-        freq: RRule.WEEKLY,
-        interval: 3,
-        dtstart: start,
-        until: end || undefined,
-      });
-      const nextOccurrence = rule.after(target, true);
-      return nextOccurrence !== null && nextOccurrence.getTime() === target.getTime();
-    }
-
-    // Handle quadweekly (every 4 weeks) - weekly with interval 4
-    if (event.recurrence === "quadweekly") {
-      const rule = new RRule({
-        freq: RRule.WEEKLY,
-        interval: 4,
-        dtstart: start,
-        until: end || undefined,
-      });
-      const nextOccurrence = rule.after(target, true);
-      return nextOccurrence !== null && nextOccurrence.getTime() === target.getTime();
-    }
-
-    const freqMap: Record<string, number> = {
-      daily: RRule.DAILY,
-      weekly: RRule.WEEKLY,
-      monthly: RRule.MONTHLY,
-      yearly: RRule.YEARLY,
-    };
-
-    const freq = freqMap[event.recurrence];
-    if (freq === undefined) return start.getTime() === target.getTime();
-
-    const rule = new RRule({
-      freq,
-      dtstart: start,
-      until: end || undefined,
-    });
-
-    const nextOccurrence = rule.after(target, true);
-    return nextOccurrence !== null && nextOccurrence.getTime() === target.getTime();
-  } catch (err) {
-    // Fallback to direct comparison if RRule fails (SSR, bundling issue, etc.)
-    console.warn("RRule failed, falling back to direct comparison:", err);
-    return directComparison(event.recurrence, start, target);
-  }
+  // Use direct comparison for all recurrence types (avoids RRule timezone bugs)
+  return directComparison(event.recurrence, start, target);
 }
 
-/** Direct date comparison fallback - used if RRule is unavailable */
+/** Direct date comparison - calculates recurring events without timezone issues */
 function directComparison(recurrence: string, start: Date, day: Date): boolean {
+  // Get day of week using UTC-aware function
+  const startDayOfWeek = getDayOfWeek(start);
+  const targetDayOfWeek = getDayOfWeek(day);
+  
   switch (recurrence) {
     case "daily":
       return true;
+    
     case "weekly":
-      return getDayOfWeek(start) === getDayOfWeek(day);
+      // Same day of week
+      return startDayOfWeek === targetDayOfWeek;
+    
     case "biweekly": {
+      // Same day of week, and difference in weeks is even
+      if (startDayOfWeek !== targetDayOfWeek) return false;
       const msPerWeek = 7 * 24 * 60 * 60 * 1000;
-      const diffWeeks = Math.floor((day.getTime() - start.getTime()) / msPerWeek);
-      return getDayOfWeek(start) === getDayOfWeek(day) && diffWeeks % 2 === 0;
+      const diffWeeks = Math.round((day.getTime() - start.getTime()) / msPerWeek);
+      return diffWeeks % 2 === 0;
     }
+    
     case "triweekly": {
+      // Same day of week, and difference in weeks is multiple of 3
+      if (startDayOfWeek !== targetDayOfWeek) return false;
       const msPerWeekTri = 7 * 24 * 60 * 60 * 1000;
-      const diffWeeksTri = Math.floor((day.getTime() - start.getTime()) / msPerWeekTri);
-      return getDayOfWeek(start) === getDayOfWeek(day) && diffWeeksTri % 3 === 0;
+      const diffWeeksTri = Math.round((day.getTime() - start.getTime()) / msPerWeekTri);
+      return diffWeeksTri % 3 === 0;
     }
+    
     case "quadweekly": {
+      // Same day of week, and difference in weeks is multiple of 4
+      if (startDayOfWeek !== targetDayOfWeek) return false;
       const msPerWeekQuad = 7 * 24 * 60 * 60 * 1000;
-      const diffWeeksQuad = Math.floor((day.getTime() - start.getTime()) / msPerWeekQuad);
-      return getDayOfWeek(start) === getDayOfWeek(day) && diffWeeksQuad % 4 === 0;
+      const diffWeeksQuad = Math.round((day.getTime() - start.getTime()) / msPerWeekQuad);
+      return diffWeeksQuad % 4 === 0;
     }
+    
     case "monthly":
+      // Same date of month
       return start.getDate() === day.getDate();
+    
     case "yearly":
+      // Same month and date
       return start.getMonth() === day.getMonth() && start.getDate() === day.getDate();
+    
     default:
       return start.getTime() === day.getTime();
   }

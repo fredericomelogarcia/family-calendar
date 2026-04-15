@@ -8,11 +8,26 @@
  * This ensures consistent date comparison regardless of time/timezone
  */
 export function toDateKey(date: Date | string): string {
-  const d = typeof date === "string" ? new Date(date) : date;
-  // Use UTC components to avoid timezone shifts
-  const year = d.getUTCFullYear();
-  const month = String(d.getUTCMonth() + 1).padStart(2, "0");
-  const day = String(d.getUTCDate()).padStart(2, "0");
+  let d: Date;
+  if (typeof date === "string") {
+    // If it's an ISO string, we treat it as a local date to avoid timezone shifts
+    // e.g. "2026-04-15T00:00:00Z" -> "2026-04-15"
+    if (date.includes("T")) {
+      const [datePart] = date.split("T");
+      d = new Date(`${datePart}T00:00:00`);
+    } else {
+      // For YYYY-MM-DD strings, new Date() treats them as UTC, 
+      // we want local midnight.
+      d = new Date(date + "T00:00:00");
+    }
+  } else {
+    d = date;
+  }
+
+  // Use local components
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
 
