@@ -52,29 +52,7 @@
   --transition-slow: 300ms ease-out;
 }
 
-/* Dark Mode */
-.dark {
-  --background: #111114;
-  --surface: #1A1A1F;
-  --surface-alt: #222228;
-  --primary: #9CB89E;
-  --primary-light: #B4CCB6;
-  --primary-dark: #7C9A7E;
-  --secondary: #D4A499;
-  --secondary-light: #E0BCB3;
-  --accent: #E0BD6A;
-  --text-primary: #F0EDE8;
-  --text-secondary: #A09A94;
-  --text-tertiary: #6B6560;
-  --border: #2E2E34;
-  --border-light: #242429;
-  --error: #E08B7C;
-  --success: #8BAE8B;
-
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.4);
-}
+/* Light theme only - no dark mode */
 
 @theme inline {
   /* Background & Surface */

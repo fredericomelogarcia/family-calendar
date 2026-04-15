@@ -12,9 +12,6 @@ import {
   Check,
   Trash,
   PencilSimple,
-  Sun,
-  Moon,
-  Desktop,
   Lock,
   Crown,
   Heart,
@@ -28,7 +25,6 @@ import { Avatar } from "@/components/ui/avatar";
 import { Modal } from "@/components/ui/modal";
 import { showToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
-import { useTheme, type ThemePreference } from "@/lib/theme";
 
 const MAX_FAMILY_MEMBERS = 6;
 
@@ -69,7 +65,6 @@ export default function SettingsPage() {
   const [family, setFamily] = useState<Family | null>(null);
   const [members, setMembers] = useState<FamilyMember[]>([]);
   const [currentUserRole, setCurrentUserRole] = useState<string>("member");
-  const { preference, setPreference } = useTheme();
   const [copied, setCopied] = useState(false);
 
   // Modal states
@@ -686,40 +681,6 @@ export default function SettingsPage() {
             >
               Leave Family
             </Button>
-          </div>
-        </div>
-      </section>
-
-      {/* Appearance Section */}
-      <section className="mb-8">
-        <h2 className="text-sm font-semibold text-text-secondary uppercase tracking-wide mb-3">
-          Appearance
-        </h2>
-        <div className="bg-surface rounded-[--radius-md] border border-border overflow-hidden">
-          <div className="grid grid-cols-3 gap-2 p-3">
-            {([
-              { value: "auto" as ThemePreference, label: "Auto", icon: Desktop, desc: "System" },
-              { value: "light" as ThemePreference, label: "Light", icon: Sun, desc: "Light" },
-              { value: "dark" as ThemePreference, label: "Dark", icon: Moon, desc: "Dark" },
-            ] as const).map((option) => {
-              const Icon = option.icon;
-              const isActive = preference === option.value;
-              return (
-                <button
-                  key={option.value}
-                  onClick={() => setPreference(option.value)}
-                  className={cn(
-                    "flex flex-col items-center gap-1.5 p-3 rounded-[--radius-md] transition-all duration-150 border-2",
-                    isActive
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-border hover:border-text-tertiary text-text-secondary hover:text-text-primary"
-                  )}
-                >
-                  <Icon size={22} weight={isActive ? "fill" : "regular"} />
-                  <span className="text-sm font-medium">{option.label}</span>
-                </button>
-              );
-            })}
           </div>
         </div>
       </section>

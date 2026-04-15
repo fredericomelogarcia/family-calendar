@@ -26,8 +26,7 @@ export const viewport: Viewport = {
   themeColor: "#7C9A7E",
 };
 
-// MINIMAL root layout - public pages use this directly
-// Protected routes have their own layout with AuthProvider
+// MINIMAL root layout - light theme only
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -38,12 +37,6 @@ export default function RootLayout({
       <head>
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-        <script
-          defer
-          dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem("zawly-theme");var d=t==="dark";if(!t)d=false;document.documentElement.classList.toggle("dark",d);var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content",d?"#1A1A1F":"#7C9A7E");}catch(e){}})()`,
-          }}
-        />
       </head>
       <body className="min-h-dvh antialiased">
         {children}

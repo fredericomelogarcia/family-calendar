@@ -2,7 +2,6 @@ import { Nunito, Inter, JetBrains_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { AuthProvider } from "@/app/providers";
-import { ThemeProvider } from "@/lib/theme";
 import { ToastContainer } from "@/components/ui/toast";
 import { BottomNav, Sidebar } from "@/components/layout/navigation";
 import { MainContent } from "@/components/layout/main-content";
@@ -29,7 +28,7 @@ const jetbrainsMono = JetBrains_Mono({
   display: "swap",
 });
 
-// Protected layout - includes Clerk, Theme, Sidebar
+// Protected layout - light theme only
 export default function ProtectedLayout({
   children,
 }: {
@@ -38,16 +37,14 @@ export default function ProtectedLayout({
   return (
     <div className={`${nunito.variable} ${inter.variable} ${jetbrainsMono.variable}`}>
       <AuthProvider>
-        <ThemeProvider>
-          <SidebarProvider>
-            <div className="flex min-h-dvh">
-              <Sidebar />
-              <MainContent>{children}</MainContent>
-            </div>
-            <BottomNav />
-          </SidebarProvider>
-          <ToastContainer />
-        </ThemeProvider>
+        <SidebarProvider>
+          <div className="flex min-h-dvh">
+            <Sidebar />
+            <MainContent>{children}</MainContent>
+          </div>
+          <BottomNav />
+        </SidebarProvider>
+        <ToastContainer />
       </AuthProvider>
       <Analytics />
       <SpeedInsights />
