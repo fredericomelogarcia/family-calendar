@@ -35,7 +35,7 @@ export function VerificationBanner() {
         <div>
           <h3 className="font-medium text-primary text-sm">Check your email</h3>
           <p className="text-sm text-text-secondary mt-0.5">
-            We&apos;ve sent a verification link to your email address. Please check your inbox and click the link to verify your account.
+            We've sent a verification link to your email address. Please check your inbox and click the link to verify your account.
           </p>
         </div>
       </div>

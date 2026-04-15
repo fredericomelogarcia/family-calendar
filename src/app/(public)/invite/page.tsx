@@ -95,7 +95,7 @@ function InviteContent() {
           </div>
           
           <h1 className="text-2xl font-bold text-text-primary mb-2">
-            You&apos;ve Been Invited!
+            You've Been Invited!
           </h1>
           <p className="text-text-secondary mb-8">
             Sign in or create an account to join the family calendar.
@@ -121,7 +121,7 @@ function InviteContent() {
           </div>
 
           <p className="text-xs text-text-tertiary mt-6">
-            After signing in, you&apos;ll automatically join the family.
+            After signing in, you'll automatically join the family.
           </p>
         </div>
       </div>
@@ -156,7 +156,7 @@ function InviteContent() {
             Welcome to {familyName || "the Family"}!
           </h1>
           <p className="text-text-secondary mb-6">
-            You&apos;ve successfully joined the family calendar.
+            You've successfully joined the family calendar.
           </p>
 
           <div className="flex items-center justify-center gap-2 text-sm text-text-tertiary mb-6">
@@ -181,7 +181,7 @@ function InviteContent() {
         </div>
         
         <h1 className="text-2xl font-bold text-text-primary mb-2">
-          Couldn&apos;t Join Family
+          Couldn't Join Family
         </h1>
         <p className="text-text-secondary mb-6">
           {errorMessage || "Something went wrong."}

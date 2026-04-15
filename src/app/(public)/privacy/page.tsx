@@ -145,7 +145,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-bold text-text-primary mb-3">8. Children&apos;s Privacy</h2>
+            <h2 className="text-lg font-bold text-text-primary mb-3">8. Children's Privacy</h2>
             <p>
               Zawly Calendar is designed for family use, but users must be at least 13 years old to create an
               account. We do not knowingly collect personal information from children under 13. If we

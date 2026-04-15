@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useUser, useAuth, useSignIn } from "@clerk/nextjs";
+import { useUser, useAuth, useSignIn, useReverification, useSession } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -98,6 +98,44 @@ export default function SettingsPage() {
   const [passwordLoading, setPasswordLoading] = useState(false);
   // Store the new password values so we can retry after verification
   const [pendingPasswordValues, setPendingPasswordValues] = useState<ChangePasswordValues | null>(null);
+  const [reverificationCallbacks, setReverificationCallbacks] = useState<{
+    complete: () => void;
+    cancel: () => void;
+  } | null>(null);
+
+  const { session } = useSession();
+
+  const aReverifyPassword = useReverification(async (values: ChangePasswordValues) => {
+    await user?.updatePassword({
+      currentPassword: values.currentPassword,
+      newPassword: values.newPassword,
+    });
+    closeChangePasswordModal();
+    showToast("success", "Password updated!");
+  }, {
+    onNeedsReverification: ({ complete, cancel }) => {
+      setReverificationCallbacks({ complete, cancel });
+      setNeedsVerification(true);
+      
+      // Prepare the first factor verification if the session is available
+      if (session) {
+        session.startVerification({ level: 'first_factor' }).then(async (resource) => {
+          if (resource.status === 'needs_first_factor') {
+            const factor = resource.supportedFirstFactors?.find(f => f.strategy === 'email_code');
+            if (factor) {
+              await session?.prepareFirstFactorVerification({
+                strategy: factor.strategy,
+                emailAddressId: factor.emailAddressId,
+              });
+            }
+          }
+        }).catch(err => {
+          console.error("Failed to start reverification:", err);
+          setPasswordServerError("Failed to start verification. Please try again.");
+        });
+      }
+    }
+  });
 
   // Change password form (zod + react-hook-form)
   const {
@@ -386,44 +424,12 @@ export default function SettingsPage() {
       const errorCode = clerkError?.code || error?.code;
       const message = clerkError?.longMessage || clerkError?.message || error?.message || "Failed to update password";
 
-      // Clerk requires additional verification (email code) before password change
-      if (
-        errorCode === "additional_verification_required" ||
-        message.toLowerCase().includes("additional verification")
-      ) {
-        // Store password values so we can retry after verification
-        setPendingPasswordValues(values);
-
-        // Start a sign-in flow to re-authenticate the user via email code
+      if (errorCode === "additional_verification_required" || message.toLowerCase().includes("additional verification")) {
         try {
-          if (!signIn) throw new Error("Sign-in not available");
-
-          const email = user?.emailAddresses?.[0]?.emailAddress;
-          if (!email) throw new Error("No email address found");
-
-          const { error: createError } = await signIn.create({
-            identifier: email,
-          });
-
-          if (createError) {
-            setPasswordServerError(createError.longMessage || createError.message || "Failed to start verification. Please try again.");
-            return;
-          }
-
-          // Send an email code for verification
-          const { error: sendError } = await signIn.emailCode.sendCode();
-
-          if (sendError) {
-            setPasswordServerError(sendError.longMessage || sendError.message || "Failed to send verification email.");
-            return;
-          }
-
-          // Show the verification code input
-          setNeedsVerification(true);
-          showToast("info", "A verification code has been sent to your email.");
-        } catch (verifySetupError: any) {
-          const setupMessage = verifySetupError?.errors?.[0]?.longMessage || verifySetupError?.message || "Failed to start verification. Please try again.";
-          setPasswordServerError(setupMessage);
+          await aReverifyPassword(values);
+        } catch (reverifyError: any) {
+          const revMessage = reverifyError?.errors?.[0]?.longMessage || reverifyError?.message || "Reverification failed.";
+          setPasswordServerError(revMessage);
         }
         return;
       }
@@ -444,40 +450,29 @@ export default function SettingsPage() {
     setPasswordServerError(null);
 
     try {
-      if (!signIn) throw new Error("Sign-in not available");
+      if (!session) throw new Error("Session not available");
 
-      // Verify the email code
-      const { error: verifyError } = await signIn.emailCode.verifyCode({
+      // Verify the email code using the current session's reverification flow
+      await session.attemptFirstFactorVerification({
+        strategy: 'email_code',
         code: verificationCode.trim(),
       });
 
-      if (verifyError) {
-        setPasswordServerError(verifyError.longMessage || verifyError.message || "Invalid verification code.");
-        return;
+      // Notify Clerk that reverification is complete so it retries the original action
+      if (reverificationCallbacks) {
+        reverificationCallbacks.complete();
+      } else {
+        throw new Error("Reverification callbacks not found.");
       }
 
-      // If sign-in completed, finalize the session to elevate auth level
-      if (signIn.status === "complete") {
-        const { error: finalizeError } = await signIn.finalize();
-        if (finalizeError) {
-          setPasswordServerError(finalizeError.longMessage || finalizeError.message || "Verification failed.");
-          return;
-        }
-      }
-
-      // Now retry the password update with the elevated session
-      if (pendingPasswordValues) {
-        await user?.updatePassword({
-          currentPassword: pendingPasswordValues.currentPassword,
-          newPassword: pendingPasswordValues.newPassword,
-        });
-      }
-
+      // Note: The original action (updatePassword) will be automatically retried by useReverification
+      // and success/failure will be handled in the aReverifyPassword wrapper.
+      
+      // We close the modal here as the retry will either succeed (handled by aReverifyPassword)
+      // or fail (handled by the catch block in onChangePasswordSubmit).
       closeChangePasswordModal();
-      showToast("success", "Password updated!");
     } catch (error: any) {
-      const clerkError = error?.errors?.[0];
-      const message = clerkError?.longMessage || clerkError?.message || error?.message || "Verification failed. Please try again.";
+      const message = error?.errors?.[0]?.longMessage || error?.message || "Invalid verification code.";
       setPasswordServerError(message);
     } finally {
       setPasswordLoading(false);
@@ -486,17 +481,21 @@ export default function SettingsPage() {
 
   const handleResendCode = async () => {
     try {
-      if (!signIn) throw new Error("Sign-in not available");
+      if (!session) throw new Error("Session not available");
 
-      const { error: sendError } = await signIn.emailCode.sendCode();
-      if (sendError) {
-        showToast("error", sendError.longMessage || sendError.message || "Failed to resend code.");
-        return;
-      }
+      // For reverification, we use session.prepareFirstFactorVerification 
+      // but since it's already been prepared, we usually need to trigger 
+      // the a la 'sendCode' behavior. 
+      // Clerk's reverification API typically sends the code during startVerification 
+      // or prepareFirstFactorVerification.
+      
+      await session.prepareFirstFactorVerification({
+        strategy: 'email_code',
+      });
 
       showToast("success", "A new code has been sent to your email.");
     } catch (error: any) {
-      showToast("error", "Failed to resend code.");
+      showToast("error", error?.message || "Failed to resend code.");
     }
   };
 
@@ -1064,7 +1063,7 @@ export default function SettingsPage() {
           ) : (
             <div className="space-y-4">
               <p className="text-sm text-text-secondary">
-                For security, we need to verify it&apos;s you. A code has been sent to{" "}
+                For security, we need to verify it's you. A code has been sent to{" "}
                 <strong className="text-text-primary">{user?.emailAddresses?.[0]?.emailAddress}</strong>.
               </p>
               <Input

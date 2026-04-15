@@ -36,6 +36,12 @@ export function SignInForm() {
   // Separate form for verification code
   const [code, setCode] = useState("");
 
+  // Reset password states
+  const [resetPasswordStep, setResetPasswordStep] = useState<'email' | 'code' | 'password' | null>(null);
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetCode, setResetCode] = useState("");
+  const [resetPassword, setResetPassword] = useState("");
+
   const {
     register,
     handleSubmit,
@@ -168,6 +174,101 @@ export function SignInForm() {
     }
   };
 
+  // --- Reset Password Flow ---
+
+  const handleResetEmailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isLoaded || !signIn || !resetEmail.trim()) return;
+    
+    setIsSubmitting(true);
+    setServerError(null);
+
+    try {
+      const { error: createError } = await signIn.create({
+        identifier: resetEmail,
+      });
+
+      if (createError) {
+        setServerError(createError.longMessage || createError.message || "Invalid email address.");
+        return;
+      }
+
+      const { error: sendError } = await signIn.resetPasswordEmailCode.sendCode();
+      if (sendError) {
+        setServerError(sendError.longMessage || sendError.message || "Failed to send reset code.");
+        return;
+      }
+
+      setResetPasswordStep('code');
+    } catch (err: any) {
+      setServerError(err.errors?.[0]?.message || "An unexpected error occurred.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleResetCodeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isLoaded || !signIn || resetCode.length !== 6) return;
+
+    setIsSubmitting(true);
+    setServerError(null);
+
+    try {
+      const { error } = await signIn.resetPasswordEmailCode.verifyCode({
+        code: resetCode,
+      });
+
+      if (error) {
+        setServerError(error.longMessage || error.message || "Invalid verification code.");
+        return;
+      }
+
+      setResetPasswordStep('password');
+    } catch (err: any) {
+      setServerError(err.errors?.[0]?.message || "An unexpected error occurred.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleResetPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isLoaded || !signIn || resetPassword.length < 8) return;
+
+    setIsSubmitting(true);
+    setServerError(null);
+
+    try {
+      const { error } = await signIn.resetPasswordEmailCode.submitPassword({
+        password: resetPassword,
+      });
+
+      if (error) {
+        setServerError(error.longMessage || error.message || "Failed to update password.");
+        return;
+      }
+
+      if (signIn.status === 'complete') {
+        await signIn.finalize({
+          navigate: (url) => {
+            const urlString = typeof url === "string" ? url : "/dashboard";
+            router.push(urlString);
+            return Promise.resolve();
+          },
+        });
+        return;
+      }
+
+      setServerError("Password reset incomplete. Please try again.");
+    } catch (err: any) {
+      setServerError(err.errors?.[0]?.message || "An unexpected error occurred.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+  // ---------------------------
+
   // Show verification UI
   if (pendingVerification) {
     return (
@@ -180,7 +281,7 @@ export function SignInForm() {
           </div>
           <h3 className="text-lg font-semibold text-text-primary">Verify your identity</h3>
           <p className="text-sm text-text-secondary">
-            We&apos;ve sent a verification code to <span className="font-medium text-text-primary">{verificationEmail}</span>
+            We've sent a verification code to <span className="font-medium text-text-primary">{verificationEmail}</span>
           </p>
         </div>
 
@@ -212,7 +313,7 @@ export function SignInForm() {
 
         <div className="text-center space-y-2">
           <p className="text-sm text-text-secondary">
-            Didn&apos;t receive the code?{" "}
+            Didn't receive the code?{" "}
             {resendTimer > 0 ? (
               <span className="text-text-tertiary">Resend in {resendTimer}s</span>
             ) : (
@@ -238,6 +339,103 @@ export function SignInForm() {
     );
   }
 
+  // Show Reset Password UI
+  if (resetPasswordStep) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center space-y-2">
+          <div className="flex justify-center mb-4">
+            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+              <LockKey className="w-6 h-6 text-primary" />
+            </div>
+          </div>
+          <h3 className="text-lg font-semibold text-text-primary">
+            {resetPasswordStep === 'email' && "Reset Password"}
+            {resetPasswordStep === 'code' && "Verify Email"}
+            {resetPasswordStep === 'password' && "Create New Password"}
+          </h3>
+          <p className="text-sm text-text-secondary">
+            {resetPasswordStep === 'email' && "Enter your email to receive a reset code."}
+            {resetPasswordStep === 'code' && `We've sent a code to ${resetEmail}`}
+            {resetPasswordStep === 'password' && "Please enter your new secure password."}
+          </p>
+        </div>
+
+        {resetPasswordStep === 'email' && (
+          <form onSubmit={handleResetEmailSubmit} className="space-y-4">
+            <Input 
+              label="Email Address" 
+              type="email" 
+              placeholder="name@example.com" 
+              value={resetEmail}
+              onChange={(e) => setResetEmail(e.target.value)}
+              leftIcon={<Envelope className="w-4 h-4 text-text-tertiary" />}
+            />
+            {serverError && (
+              <div className="p-3 text-sm text-error bg-error/10 border border-error/20 rounded-md animate-slide-up">
+                {serverError}
+              </div>
+            )}
+            <Button type="submit" className="w-full" loading={isSubmitting} disabled={!resetEmail.includes("@") || isSubmitting}>
+              Send Reset Code
+            </Button>
+          </form>
+        )}
+
+        {resetPasswordStep === 'code' && (
+          <form onSubmit={handleResetCodeSubmit} className="space-y-4">
+            <Input 
+              label="Verification Code" 
+              type="text" 
+              placeholder="000000" 
+              value={resetCode}
+              onChange={(e) => setResetCode(e.target.value.replace(/\D/g, ""))}
+              className="text-center tracking-widest"
+            />
+            {serverError && (
+              <div className="p-3 text-sm text-error bg-error/10 border border-error/20 rounded-md animate-slide-up">
+                {serverError}
+              </div>
+            )}
+            <Button type="submit" className="w-full" loading={isSubmitting} disabled={resetCode.length !== 6 || isSubmitting}>
+              Verify Code
+            </Button>
+          </form>
+        )}
+
+        {resetPasswordStep === 'password' && (
+          <form onSubmit={handleResetPasswordSubmit} className="space-y-4">
+            <Input 
+              label="New Password" 
+              type="password" 
+              placeholder="••••••••" 
+              value={resetPassword}
+              onChange={(e) => setResetPassword(e.target.value)}
+              leftIcon={<LockKey className="w-4 h-4 text-text-tertiary" />}
+            />
+            {serverError && (
+              <div className="p-3 text-sm text-error bg-error/10 border border-error/20 rounded-md animate-slide-up">
+                {serverError}
+              </div>
+            )}
+            <Button type="submit" className="w-full" loading={isSubmitting} disabled={resetPassword.length < 8 || isSubmitting}>
+              Update Password
+            </Button>
+          </form>
+        )}
+
+        <div className="text-center">
+          <button
+            onClick={() => { setResetPasswordStep(null); setServerError(null); }}
+            className="text-primary font-medium hover:underline"
+          >
+            Back to sign in
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // Normal sign-in form
   return (
     <div className="space-y-6">
@@ -250,14 +448,27 @@ export function SignInForm() {
           error={errors.email?.message}
           leftIcon={<Envelope className="w-4 h-4 text-text-tertiary" />}
         />
-        <Input 
-          label="Password" 
-          type="password" 
-          placeholder="••••••••" 
-          {...register("password")}
-          error={errors.password?.message}
-          leftIcon={<LockKey className="w-4 h-4 text-text-tertiary" />}
-        />
+        <div className="space-y-1">
+          <div className="flex items-center justify-between">
+            <Input 
+              label="Password" 
+              type="password" 
+              placeholder="••••••••" 
+              {...register("password")}
+              error={errors.password?.message}
+              leftIcon={<LockKey className="w-4 h-4 text-text-tertiary" />}
+            />
+          </div>
+          <div className="text-right">
+            <button
+              type="button"
+              onClick={() => setResetPasswordStep('email')}
+              className="text-xs text-primary font-medium hover:underline"
+            >
+              Forgot password?
+            </button>
+          </div>
+        </div>
         
         {serverError && (
           <div className="p-3 text-sm text-error bg-error/10 border border-error/20 rounded-md animate-slide-up">
@@ -274,7 +485,7 @@ export function SignInForm() {
       </form>
 
       <p className="text-center text-sm text-text-secondary mt-6">
-        Don&apos;t have an account?{" "}
+        Don't have an account?{" "}
         <Link href="/sign-up" className="text-primary font-semibold hover:underline">
           Create an account
         </Link>

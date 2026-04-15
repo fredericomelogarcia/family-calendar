@@ -15,7 +15,7 @@ export default async function HomePage() {
         {/* Hero - Original Copy */}
         <section className="px-6 max-w-3xl mx-auto text-center py-16">
           <h1 className="text-5xl md:text-6xl font-bold mb-4 leading-tight text-text-primary">
-            Your family&apos;s rhythm, <br />
+            Your family's rhythm, <br />
             <span className="text-primary">perfectly in sync.</span>
           </h1>
           
@@ -75,7 +75,7 @@ export default async function HomePage() {
                 Zero stress, zero cost.
               </h2>
               <p className="text-text-secondary mb-6 max-w-lg mx-auto">
-                We believe organizing your family life shouldn&apos;t come with a monthly subscription. That&apos;s why Zawly Calendar is completely free.
+                We believe organizing your family life shouldn't come with a monthly subscription. That's why Zawly Calendar is completely free.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pb-8">
                 <Link

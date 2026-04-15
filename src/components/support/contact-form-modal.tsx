@@ -94,7 +94,7 @@ export function ContactFormModal({ isOpen, onClose }: ContactFormModalProps) {
             Thank you!
           </h3>
           <p className="text-text-secondary text-sm max-w-xs">
-            Your message has been sent successfully. We&apos;ll get back to you as soon as we can.
+            Your message has been sent successfully. We'll get back to you as soon as we can.
           </p>
           <Button variant="secondary" onClick={handleClose} className="mt-2">
             Close
@@ -103,8 +103,8 @@ export function ContactFormModal({ isOpen, onClose }: ContactFormModalProps) {
       ) : (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           <p className="text-text-secondary text-sm">
-            We&apos;re always open to feedback, feature requests, or bug reports. 
-            Just drop us a message and we&apos;ll get back to you!
+            We're always open to feedback, feature requests, or bug reports. 
+            Just drop us a message and we'll get back to you!
           </p>
 
           <Input

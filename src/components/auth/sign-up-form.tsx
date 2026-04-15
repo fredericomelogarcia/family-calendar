@@ -197,7 +197,7 @@ export function SignUpForm() {
           </div>
           <h3 className="text-lg font-semibold text-text-primary">Verify your email</h3>
           <p className="text-sm text-text-secondary">
-            We&apos;ve sent a verification code to <span className="font-medium text-text-primary">{verificationEmail}</span>
+            We've sent a verification code to <span className="font-medium text-text-primary">{verificationEmail}</span>
           </p>
         </div>
 
@@ -227,7 +227,7 @@ export function SignUpForm() {
 
         <div className="text-center space-y-2">
           <p className="text-sm text-text-secondary">
-            Didn&apos;t receive the code?{" "}
+            Didn't receive the code?{" "}
             {resendTimer > 0 ? (
               <span className="text-text-tertiary">Resend in {resendTimer}s</span>
             ) : (

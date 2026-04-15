@@ -89,8 +89,8 @@ export default function TermsPage() {
             <ul className="list-disc list-inside mt-2 space-y-1">
               <li>Share content that is unlawful, harmful, threatening, or harassing</li>
               <li>Impersonate another person or misrepresent your affiliation</li>
-              <li>Attempt to gain unauthorized access to another user&apos;s account</li>
-              <li>Interfere with or disrupt the Service&apos;s infrastructure</li>
+              <li>Attempt to gain unauthorized access to another user's account</li>
+              <li>Interfere with or disrupt the Service's infrastructure</li>
               <li>Use the Service for any automated or commercial purpose without permission</li>
               <li>Reverse engineer, decompile, or otherwise attempt to extract the source code</li>
             </ul>
