@@ -1,17 +1,17 @@
 import { Nunito, Inter, JetBrains_Mono } from "next/font/google";
-import { Analytics } from "@vercel/analytics/next";
-import { SpeedInsights } from "@vercel/speed-insights/next";
 import { AuthProvider } from "@/app/providers";
 import { ToastContainer } from "@/components/ui/toast";
 import { BottomNav, Sidebar } from "@/components/layout/navigation";
 import { MainContent } from "@/components/layout/main-content";
 import { SidebarProvider } from "@/components/layout/sidebar-context";
+import { LazyAnalytics } from "@/components/analytics/lazy-analytics";
 
 const nunito = Nunito({
   variable: "--font-heading",
   subsets: ["latin"],
   weight: ["600", "700"],
   display: "swap",
+  preload: true,
 });
 
 const inter = Inter({
@@ -19,6 +19,7 @@ const inter = Inter({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
   display: "swap",
+  preload: true,
 });
 
 const jetbrainsMono = JetBrains_Mono({
@@ -26,6 +27,7 @@ const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
   weight: ["400", "500"],
   display: "swap",
+  preload: true,
 });
 
 // Protected layout - light theme only
@@ -46,8 +48,7 @@ export default function ProtectedLayout({
         </SidebarProvider>
         <ToastContainer />
       </AuthProvider>
-      <Analytics />
-      <SpeedInsights />
+      <LazyAnalytics />
     </div>
   );
 }
