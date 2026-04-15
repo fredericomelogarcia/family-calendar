@@ -229,7 +229,6 @@ export default function OnboardingPage() {
                   onChange={(e) => setFamilyName(e.target.value)}
                   placeholder="The Smith Family"
                   onKeyDown={(e) => e.key === "Enter" && handleCreateFamily()}
-                  autoFocus
                 />
 
                 {/* Email Invitations */}
@@ -323,7 +322,6 @@ export default function OnboardingPage() {
                     placeholder="ABCDEF"
                     maxLength={6}
                     className="w-full h-14 px-4 rounded-[--radius-sm] border border-border bg-surface text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary font-mono text-2xl tracking-[0.2em] text-center uppercase"
-                    autoFocus
                   />
                   <p className="text-xs text-text-tertiary mt-2 text-center">
                     6 characters, letters and numbers only

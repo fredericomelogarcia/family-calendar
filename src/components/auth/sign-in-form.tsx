@@ -196,7 +196,6 @@ export function SignInForm() {
               onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
               className="w-full h-12 px-4 text-center text-2xl tracking-[0.5em] rounded-[--radius-sm] border border-border bg-surface text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-primary font-mono"
               autoComplete="one-time-code"
-              autoFocus
             />
           </div>
 

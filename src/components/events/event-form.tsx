@@ -99,7 +99,6 @@ export function EventForm({
             value={title}
             onChange={(e) => { setTitle(e.target.value); if (errors.title) setErrors(prev => ({ ...prev, title: "" })); }}
             error={errors.title}
-            autoFocus
           />
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 min-w-0">
