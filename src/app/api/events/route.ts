@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { events, users } from "@/lib/db/schema";
 import { auth } from "@clerk/nextjs/server";
-import { eq, and, lte, gte, count } from "drizzle-orm";
+import { eq, and, lte, gte, count, or, sql } from "drizzle-orm";
 import { startOfDay, endOfDay, parseISO } from "date-fns";
 
 // GET /api/events
@@ -37,9 +37,18 @@ export async function GET(request: NextRequest) {
     const conditions = [eq(events.familyId, user.familyId)];
 
     if (start && end) {
+      // For recurring events: we need events that start BEFORE or DURING the range
+      // AND either have no end date OR have an end date AFTER the range starts
+      const rangeStart = startOfDay(parseISO(start));
+      const rangeEnd = endOfDay(parseISO(end));
+      
+      // Event must start before or during the range
+      conditions.push(lte(events.startDate, rangeEnd));
+      
+      // Event must not have ended before the range starts
+      // Using sql builder for complex null check
       conditions.push(
-        gte(events.startDate, startOfDay(parseISO(start))),
-        lte(events.startDate, endOfDay(parseISO(end)))
+        sql`${events.endDate} IS NULL OR ${events.endDate} >= ${rangeStart}`
       );
     } else if (start) {
       conditions.push(gte(events.startDate, startOfDay(parseISO(start))));

@@ -37,17 +37,14 @@ export default async function CalendarPage() {
     redirect("/onboarding");
   }
 
-  // Fetch events for current month AND include events from previous months that might recur
-  // We fetch events from 60 days before to ensure recurring events show
+  // Fetch events for current month server-side
   const today = new Date();
-  const fetchStart = new Date(today.getFullYear(), today.getMonth() - 2, 1); // 2 months back
   const monthStart = startOfMonth(today);
   const monthEnd = endOfMonth(today);
 
   const eventsList = await db.query.events.findMany({
     where: and(
       eq(events.familyId, user.familyId),
-      gte(events.startDate, fetchStart),
       lte(events.startDate, monthEnd)
     ),
     orderBy: (events, { asc }) => [asc(events.startDate)],
