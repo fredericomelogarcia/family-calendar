@@ -60,10 +60,11 @@ function InviteContent() {
       if (res.ok) {
         setStatus("success");
         setFamilyName(data.family?.name || "");
-        // Redirect to dashboard after a brief delay
+        // Wait longer to ensure DB is updated, then use hard redirect
         setTimeout(() => {
-          window.location.href = "/dashboard"; // Use full page navigation to ensure fresh state
-        }, 1500);
+          // Use timestamp to bust any cache
+          window.location.href = `/dashboard?t=${Date.now()}`;
+        }, 2000);
       } else {
         setStatus("error");
         setErrorMessage(data.error || "Failed to accept invitation");

@@ -6,7 +6,13 @@ import { eq, and, lte, gte } from "drizzle-orm";
 import { startOfDay, endOfDay, addDays } from "date-fns";
 import DashboardClient from "./dashboard-client";
 
+// Force dynamic and disable caching
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+export const metadata = {
+  title: "Dashboard | Zawly",
+};
 
 interface Event {
   id: string;
@@ -26,11 +32,21 @@ export default async function DashboardPage() {
     redirect("/sign-in");
   }
 
-  // Fetch user and family data server-side
+  // Fetch user and family data server-side - no caching
   const user = await db.query.users.findFirst({
     where: eq(users.id, userId),
     columns: { familyId: true },
   });
+
+  // If no user record exists in DB yet, create it
+  if (!user) {
+    // User exists in Clerk but not in our DB - create them without a family
+    await db.insert(users).values({
+      id: userId,
+      role: "member",
+    });
+    redirect("/onboarding");
+  }
 
   // If no family, redirect to onboarding
   if (!user?.familyId) {
