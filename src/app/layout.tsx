@@ -1,35 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Nunito, Inter, JetBrains_Mono } from "next/font/google";
-import { Analytics } from "@vercel/analytics/next";
-import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
-import { AuthProvider } from "./providers";
-import { ThemeProvider } from "@/lib/theme";
-import { ToastContainer } from "@/components/ui/toast";
-import { BottomNav, Sidebar } from "@/components/layout/navigation";
-import { MainContent } from "@/components/layout/main-content";
-import { SidebarProvider } from "@/components/layout/sidebar-context";
-
-const nunito = Nunito({
-  variable: "--font-heading",
-  subsets: ["latin"],
-  weight: ["600", "700"],
-  display: "swap",
-});
-
-const inter = Inter({
-  variable: "--font-body",
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  display: "swap",
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  variable: "--font-mono",
-  subsets: ["latin"],
-  weight: ["400", "500"],
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: "Zawly Calendar",
@@ -46,11 +16,6 @@ export const metadata: Metadata = {
   other: {
     "msapplication-TileColor": "#7C9A7E",
   },
-  // Resource hints for performance
-  icons: {
-    icon: "/favicon.ico",
-    apple: "/apple-touch-icon.png",
-  },
 };
 
 export const viewport: Viewport = {
@@ -61,21 +26,18 @@ export const viewport: Viewport = {
   themeColor: "#7C9A7E",
 };
 
+// MINIMAL root layout - public pages use this directly
+// Protected routes have their own layout with AuthProvider
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full" suppressHydrationWarning>
+    <html lang="en" className="h-full">
       <head>
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-        {/* Resource hints for performance */}
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link rel="preconnect" href="https://game-lemming-55.clerk.accounts.dev" />
-        <link rel="dns-prefetch" href="https://game-lemming-55.clerk.accounts.dev" />
-        {/* Inline script to prevent flash of wrong theme - deferred */}
         <script
           defer
           dangerouslySetInnerHTML={{
@@ -83,32 +45,8 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body
-        className={`${nunito.variable} ${inter.variable} ${jetbrainsMono.variable} min-h-dvh antialiased`}
-      >
-        <AuthProvider>
-        <ThemeProvider>
-          <SidebarProvider>
-          <div className="flex min-h-dvh">
-            {/* Sidebar - Desktop */}
-            <Sidebar />
-            
-            {/* Main content */}
-            <MainContent>
-              {children}
-            </MainContent>
-          </div>
-          
-          {/* Bottom Nav - Mobile */}
-          <BottomNav />
-          </SidebarProvider>
-          
-          {/* Toast notifications */}
-          <ToastContainer />
-        </ThemeProvider>
-        </AuthProvider>
-        <Analytics />
-        <SpeedInsights />
+      <body className="min-h-dvh antialiased">
+        {children}
       </body>
     </html>
   );
