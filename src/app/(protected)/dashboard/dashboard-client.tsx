@@ -98,14 +98,12 @@ interface DashboardClientProps {
   initialEvents?: Event[];
   familyMembers?: FamilyMember[];
   hasFamily?: boolean | null;
-  userFirstName?: string;
 }
 
 export default function DashboardClient({ 
   initialEvents = [], 
   familyMembers: initialFamilyMembers = [],
-  hasFamily: initialHasFamily = null,
-  userFirstName = "there"
+  hasFamily: initialHasFamily = null
 }: DashboardClientProps) {
   const { user, isLoaded } = useUser();
   const router = useRouter();
@@ -328,7 +326,7 @@ export default function DashboardClient({
       <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-text-primary">
-            Good {getGreeting()}, {userFirstName} 👋
+            Good {getGreeting()}, {isLoaded ? user?.firstName || "there" : "..."} 👋
           </h1>
           <p className="text-sm text-text-secondary mt-1">
             {format(selectedDate, "EEEE, MMMM d, yyyy")}

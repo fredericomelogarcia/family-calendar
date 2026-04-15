@@ -1,4 +1,4 @@
-import { auth, currentUser } from "@clerk/nextjs/server";
+import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { events, users } from "@/lib/db/schema";
@@ -21,13 +21,10 @@ interface Event {
 
 export default async function DashboardPage() {
   const { userId } = await auth();
-  const clerkUser = await currentUser();
   
   if (!userId) {
     redirect("/sign-in");
   }
-
-  const userFirstName = clerkUser?.firstName || "there";
 
   // Fetch user and family data server-side
   const user = await db.query.users.findFirst({
@@ -41,7 +38,6 @@ export default async function DashboardPage() {
       <DashboardClient 
         initialEvents={[]}
         hasFamily={false}
-        userFirstName={userFirstName}
       />
     );
   }
@@ -75,7 +71,6 @@ export default async function DashboardPage() {
     <DashboardClient
       initialEvents={parsedEvents}
       hasFamily={true}
-      userFirstName={userFirstName}
     />
   );
 }
