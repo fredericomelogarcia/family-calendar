@@ -251,43 +251,40 @@ export function SignInForm() {
     }
   };
 
-  const handleResetPasswordSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const values = handleResetSubmit(async (vals: ResetPasswordValues) => {
-      if (!isLoaded || !signIn || vals.password.length < 8) return;
+  const handleResetPasswordSubmit = handleResetSubmit(async (vals: ResetPasswordValues) => {
+    if (!isLoaded || !signIn || vals.password.length < 8) return;
 
-      setIsSubmitting(true);
-      setServerError(null);
+    setIsSubmitting(true);
+    setServerError(null);
 
-      try {
-        const { error } = await signIn.resetPasswordEmailCode.submitPassword({
-          password: vals.password,
-        });
+    try {
+      const { error } = await signIn.resetPasswordEmailCode.submitPassword({
+        password: vals.password,
+      });
 
-        if (error) {
-          setServerError(error.longMessage || error.message || "Failed to update password.");
-          return;
-        }
-
-        if (signIn.status === 'complete') {
-          await signIn.finalize({
-            navigate: (url) => {
-              const urlString = typeof url === "string" ? url : "/dashboard";
-              router.push(urlString);
-              return Promise.resolve();
-            },
-          });
-          return;
-        }
-
-        setServerError("Password reset incomplete. Please try again.");
-      } catch (err: any) {
-        setServerError(err.errors?.[0]?.message || "An unexpected error occurred.");
-      } finally {
-        setIsSubmitting(false);
+      if (error) {
+        setServerError(error.longMessage || error.message || "Failed to update password.");
+        return;
       }
-    });
-  };
+
+      if (signIn.status === 'complete') {
+        await signIn.finalize({
+          navigate: (url) => {
+            const urlString = typeof url === "string" ? url : "/dashboard";
+            router.push(urlString);
+            return Promise.resolve();
+          },
+        });
+        return;
+      }
+
+      setServerError("Password reset incomplete. Please try again.");
+    } catch (err: any) {
+      setServerError(err.errors?.[0]?.message || "An unexpected error occurred.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  });
   // ---------------------------
 
   // Show verification UI
