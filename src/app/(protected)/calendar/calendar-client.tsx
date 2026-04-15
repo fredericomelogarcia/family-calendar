@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo, Suspense, lazy } from "react";
+import { useState, useCallback, useMemo, useEffect, Suspense, lazy } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import {
@@ -80,6 +80,11 @@ export default function CalendarClient({ initialEvents, hasFamily: initialHasFam
       console.error("Error fetching events:", error);
     }
   }, [currentDate]);
+
+  // Fetch events when currentDate (month) changes
+  useEffect(() => {
+    fetchEvents();
+  }, [currentDate, fetchEvents]);
 
   const handleCreateEvent = useCallback(async (data: EventFormData) => {
     try {

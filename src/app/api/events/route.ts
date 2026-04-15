@@ -37,7 +37,10 @@ export async function GET(request: NextRequest) {
     const conditions = [eq(events.familyId, user.familyId)];
 
     if (start && end) {
-      conditions.push(lte(events.startDate, endOfDay(parseISO(end))));
+      conditions.push(
+        gte(events.startDate, startOfDay(parseISO(start))),
+        lte(events.startDate, endOfDay(parseISO(end)))
+      );
     } else if (start) {
       conditions.push(gte(events.startDate, startOfDay(parseISO(start))));
     }
