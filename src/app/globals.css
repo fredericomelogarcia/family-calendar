@@ -113,6 +113,11 @@
   --font-mono: var(--font-mono);
 }
 
+/* CSS containment for performance - prevents layout recalcs from affecting entire page */
+.contain-layout {
+  contain: layout style paint;
+}
+
 /* Base styles */
 * {
   box-sizing: border-box;

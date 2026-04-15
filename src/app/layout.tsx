@@ -63,8 +63,9 @@ export default function RootLayout({
       <head>
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-        {/* Inline script to prevent flash of wrong theme */}
+        {/* Inline script to prevent flash of wrong theme - deferred */}
         <script
+          defer
           dangerouslySetInnerHTML={{
             __html: `(function(){try{var t=localStorage.getItem("zawly-theme");var d=t==="dark";if(!t)d=false;document.documentElement.classList.toggle("dark",d);var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content",d?"#1A1A1F":"#7C9A7E");}catch(e){}})()`,
           }}

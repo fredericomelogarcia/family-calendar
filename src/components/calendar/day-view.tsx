@@ -2,8 +2,8 @@
 
 import { isEventOnDay } from "@/lib/calendar-utils";
 import { format } from "date-fns";
-import { motion, AnimatePresence } from "framer-motion";
-import { Plus, CalendarBlank, Clock } from "@phosphor-icons/react";
+import { useMemo, memo } from "react";
+import { Plus, CalendarBlank } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { EventCard } from "@/components/events/event-card";
 import { cn } from "@/lib/utils";
@@ -24,13 +24,41 @@ interface DayViewProps {
   onEventClick?: (event: any) => void;
 }
 
-export function DayView({ selectedDate, events, onCreateEvent, onEventClick }: DayViewProps) {
-  const selectedDateEvents = events.filter(event => 
-    isEventOnDay(event, selectedDate)
+// Memoized event list to prevent unnecessary re-renders
+const EventList = memo(function EventList({ 
+  events, 
+  onEventClick 
+}: { 
+  events: any[]; 
+  onEventClick?: (event: any) => void;
+}) {
+  return (
+    <div className="space-y-3">
+      {events.map((event, i) => (
+        <div 
+          key={event.id} 
+          className="animate-slide-up"
+          style={{ animationDelay: `${Math.min(i * 30, 150)}ms` }}
+        >
+          <EventCard 
+            event={event} 
+            onClick={onEventClick ? () => onEventClick(event) : undefined}
+          />
+        </div>
+      ))}
+    </div>
+  );
+});
+
+export const DayView = memo(function DayView({ selectedDate, events, onCreateEvent, onEventClick }: DayViewProps) {
+  // Memoize events filtering
+  const selectedDateEvents = useMemo(() => 
+    events.filter(event => isEventOnDay(event, selectedDate)),
+    [events, selectedDate]
   );
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full" style={{ contain: "layout style" }}>
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-xl font-bold font-[family-name:var(--font-heading)] text-text-primary">
@@ -51,42 +79,19 @@ export function DayView({ selectedDate, events, onCreateEvent, onEventClick }: D
       </div>
 
       <div className="flex-1 space-y-4 overflow-y-auto pr-2">
-        <AnimatePresence mode="popLayout">
-          {selectedDateEvents.length > 0 ? (
-            <div className="space-y-3">
-              {selectedDateEvents.map((event, i) => (
-                <motion.div
-                  key={event.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ delay: i * 0.05 }}
-                >
-                  <EventCard 
-                    event={event} 
-                    onClick={onEventClick ? () => onEventClick(event) : undefined}
-                  />
-                </motion.div>
-              ))}
+        {selectedDateEvents.length > 0 ? (
+          <EventList events={selectedDateEvents} onEventClick={onEventClick} />
+        ) : (
+          <div className="flex flex-col items-center justify-center py-12 px-6 bg-surface-alt rounded-[--radius-md] border border-border border-dashed text-center animate-fade-in">
+            <div className="w-12 h-12 rounded-full bg-surface flex items-center justify-center mb-3">
+              <CalendarBlank size={24} className="text-text-tertiary" />
             </div>
-          ) : (
-            <motion.div
-              key="empty"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="flex flex-col items-center justify-center py-12 px-6 bg-surface-alt rounded-[--radius-md] border border-border border-dashed text-center"
-            >
-              <div className="w-12 h-12 rounded-full bg-surface flex items-center justify-center mb-3">
-                <CalendarBlank size={24} className="text-text-tertiary" />
-              </div>
-              <p className="text-sm text-text-secondary">
-                No events for this day.
-              </p>
-            </motion.div>
-          )}
-        </AnimatePresence>
+            <p className="text-sm text-text-secondary">
+              No events for this day.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
-}
+});

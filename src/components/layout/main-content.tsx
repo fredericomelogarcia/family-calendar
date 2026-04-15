@@ -15,7 +15,7 @@ export function MainContent({ children }: { children: React.ReactNode }) {
 
   return (
     <main className={cn(
-      "flex-1 overflow-y-auto transition-[margin] duration-200",
+      "flex-1 overflow-y-auto",
       isSignedIn && "pb-24 lg:pb-0",
       hasSidebar ? (isCollapsed ? "lg:ml-24" : "lg:ml-72") : "lg:ml-0"
     )}>

@@ -1,8 +1,8 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import { memo } from "react";
 
 interface EventCardProps {
   event: {
@@ -20,14 +20,19 @@ interface EventCardProps {
   onLongPress?: () => void;
 }
 
-export function EventCard({ event, showDate, occurrenceDate, onClick, onLongPress }: EventCardProps) {
+export const EventCard = memo(function EventCard({ 
+  event, 
+  showDate, 
+  occurrenceDate, 
+  onClick, 
+  onLongPress 
+}: EventCardProps) {
   const startDate = new Date(event.startDate);
   const displayDate = occurrenceDate || startDate;
   const isAllDay = event.allDay ?? true;
 
   return (
-    <motion.button
-      whileTap={{ scale: 0.98 }}
+    <button
       onClick={onClick}
       onContextMenu={(e) => {
         e.preventDefault();
@@ -36,7 +41,7 @@ export function EventCard({ event, showDate, occurrenceDate, onClick, onLongPres
       className={cn(
         "w-full text-left p-4 rounded-[--radius-md] bg-surface border border-border",
         "hover:shadow-sm hover:border-text-tertiary transition-all duration-150",
-        "flex gap-4 items-start",
+        "flex gap-4 items-start active:scale-[0.99] will-change-transform",
         onClick && "cursor-pointer"
       )}
     >
@@ -78,6 +83,6 @@ export function EventCard({ event, showDate, occurrenceDate, onClick, onLongPres
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
         </svg>
       )}
-    </motion.button>
+    </button>
   );
-}
+});

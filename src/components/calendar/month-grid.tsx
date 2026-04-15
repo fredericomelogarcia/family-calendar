@@ -13,7 +13,7 @@ import {
   isSameDay, 
   isToday 
 } from "date-fns";
-import { motion } from "framer-motion";
+import { memo, useMemo } from "react";
 
 interface MonthGridProps {
   currentMonth: Date;
@@ -30,22 +30,81 @@ interface MonthGridProps {
   }>;
 }
 
-export function MonthGrid({ currentMonth, selectedDate, onSelectDate, events }: MonthGridProps) {
+interface DayCellProps {
+  day: Date;
+  dayEvents: Array<{ id: string }>;
+  isCurrentMonth: boolean;
+  isSelected: boolean;
+  isDayToday: boolean;
+  onSelectDate: (date: Date) => void;
+}
+
+// Memoized day cell to prevent unnecessary re-renders
+const DayCell = memo(function DayCell({
+  day,
+  dayEvents,
+  isCurrentMonth,
+  isSelected,
+  isDayToday,
+  onSelectDate,
+}: DayCellProps) {
+  const hasEvents = dayEvents.length > 0;
+
+  return (
+    <button
+      onClick={() => onSelectDate(day)}
+      className={cn(
+        "aspect-square lg:aspect-auto lg:h-24 flex flex-col items-center justify-center rounded-[--radius-sm]",
+        "transition-colors duration-150 hover:bg-surface-alt active:scale-95 will-change-transform",
+        !isCurrentMonth && "opacity-40",
+        isSelected && "bg-primary text-white",
+        isDayToday && !isSelected && "ring-2 ring-primary ring-inset"
+      )}
+    >
+      <span
+        className={cn(
+          "text-sm font-medium",
+          isSelected && "text-white",
+          !isCurrentMonth && "text-text-tertiary",
+          !isSelected && isCurrentMonth && "text-text-primary"
+        )}
+      >
+        {format(day, "d")}
+      </span>
+      
+      {/* Event indicator dot - always reserve space so number stays aligned */}
+      <div className="h-1.5 mt-1 flex items-center justify-center">
+        {hasEvents && (
+          <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+        )}
+      </div>
+    </button>
+  );
+});
+
+// Memoized grid component
+export const MonthGrid = memo(function MonthGrid({ currentMonth, selectedDate, onSelectDate, events }: MonthGridProps) {
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
   const calendarStart = startOfWeek(monthStart, { weekStartsOn: 0 });
   const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 0 });
   
-  const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
+  const days = useMemo(() => 
+    eachDayOfInterval({ start: calendarStart, end: calendarEnd }),
+    [calendarStart, calendarEnd]
+  );
+  
   const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-  // Group events by day
-  const eventsByDay = days.reduce((acc, day) => {
-    acc[day.toISOString()] = events.filter(event => 
-      isEventOnDay(event, day)
-    );
-    return acc;
-  }, {} as Record<string, typeof events>);
+  // Memoize events lookup to prevent recalculation on every render
+  const eventsByDay = useMemo(() => {
+    return days.reduce((acc, day) => {
+      acc[day.toISOString()] = events.filter(event => 
+        isEventOnDay(event, day)
+      );
+      return acc;
+    }, {} as Record<string, typeof events>);
+  }, [days, events]);
 
   return (
     <div className="select-none w-full">
@@ -61,51 +120,27 @@ export function MonthGrid({ currentMonth, selectedDate, onSelectDate, events }: 
         ))}
       </div>
 
-      {/* Calendar grid */}
-      <div className="grid grid-cols-7 gap-1">
-        {days.map((day, index) => {
+      {/* Calendar grid - Use CSS animation instead of JS */}
+      <div 
+        className="grid grid-cols-7 gap-1 animate-fade-in"
+        style={{ contain: "layout style paint" }}
+      >
+        {days.map((day) => {
           const dayEvents = eventsByDay[day.toISOString()] || [];
-          const isCurrentMonth = isSameMonth(day, currentMonth);
-          const isSelected = isSameDay(day, selectedDate);
-          const isDayToday = isToday(day);
-          const hasEvents = dayEvents.length > 0;
-
+          
           return (
-            <motion.button
+            <DayCell
               key={day.toISOString()}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: index * 0.01, duration: 0.15 }}
-              onClick={() => onSelectDate(day)}
-              className={cn(
-                "aspect-square lg:aspect-auto lg:h-24 flex flex-col items-center justify-center rounded-[--radius-sm] transition-all duration-150",
-                "hover:bg-surface-alt active:scale-95",
-                !isCurrentMonth && "opacity-40",
-                isSelected && "bg-primary text-white",
-                isDayToday && !isSelected && "ring-2 ring-primary ring-inset"
-              )}
-            >
-              <span
-                className={cn(
-                  "text-sm font-medium",
-                  isSelected && "text-white",
-                  !isCurrentMonth && "text-text-tertiary",
-                  !isSelected && isCurrentMonth && "text-text-primary"
-                )}
-              >
-                {format(day, "d")}
-              </span>
-              
-              {/* Event indicator dot - always reserve space so number stays aligned */}
-              <div className="h-1.5 mt-1 flex items-center justify-center">
-                {hasEvents && (
-                  <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                )}
-              </div>
-            </motion.button>
+              day={day}
+              dayEvents={dayEvents}
+              isCurrentMonth={isSameMonth(day, currentMonth)}
+              isSelected={isSameDay(day, selectedDate)}
+              isDayToday={isToday(day)}
+              onSelectDate={onSelectDate}
+            />
           );
         })}
       </div>
     </div>
   );
-}
+});
