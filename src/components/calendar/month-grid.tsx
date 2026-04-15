@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { isEventOnDay } from "@/lib/calendar-utils";
+import { toDateKey } from "@/lib/date-utils";
 import { 
   format, 
   startOfMonth, 
@@ -98,7 +99,7 @@ export const MonthGrid = memo(function MonthGrid({ currentMonth, selectedDate, o
   // Memoize events lookup to prevent recalculation on every render
   const eventsByDay = useMemo(() => {
     return days.reduce((acc, day) => {
-      acc[day.toISOString()] = events.filter(event => 
+      acc[toDateKey(day)] = events.filter(event => 
         isEventOnDay(event, day)
       );
       return acc;
@@ -125,11 +126,11 @@ export const MonthGrid = memo(function MonthGrid({ currentMonth, selectedDate, o
         style={{ contain: "layout style paint" }}
       >
         {days.map((day) => {
-          const dayEvents = eventsByDay[day.toISOString()] || [];
+          const dayEvents = eventsByDay[toDateKey(day)] || [];
           
           return (
             <DayCell
-              key={day.toISOString()}
+              key={toDateKey(day)}
               day={day}
               dayEvents={dayEvents}
               isCurrentMonth={isSameMonth(day, currentMonth)}
