@@ -25,6 +25,8 @@ export function AuthLayout({ children, title, subtitle, className }: AuthLayoutP
                 width={48}
                 height={48}
                 className="rounded-[--radius-md]"
+                priority
+                sizes="48px"
               />
             </div>
             <h1 className="text-3xl font-bold text-text-primary tracking-tight text-center">

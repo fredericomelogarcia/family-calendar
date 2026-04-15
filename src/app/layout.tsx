@@ -14,18 +14,21 @@ const nunito = Nunito({
   variable: "--font-heading",
   subsets: ["latin"],
   weight: ["600", "700"],
+  display: "swap",
 });
 
 const inter = Inter({
   variable: "--font-body",
   subsets: ["latin"],
   weight: ["400", "500", "600"],
+  display: "swap",
 });
 
 const jetbrainsMono = JetBrains_Mono({
   variable: "--font-mono",
   subsets: ["latin"],
   weight: ["400", "500"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -42,6 +45,11 @@ export const metadata: Metadata = {
   },
   other: {
     "msapplication-TileColor": "#7C9A7E",
+  },
+  // Resource hints for performance
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
   },
 };
 
@@ -63,6 +71,10 @@ export default function RootLayout({
       <head>
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        {/* Resource hints for performance */}
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://game-lemming-55.clerk.accounts.dev" />
+        <link rel="dns-prefetch" href="https://game-lemming-55.clerk.accounts.dev" />
         {/* Inline script to prevent flash of wrong theme - deferred */}
         <script
           defer

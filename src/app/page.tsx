@@ -34,6 +34,8 @@ export default async function HomePage() {
               width={32}
               height={32}
               className="rounded-lg"
+              priority
+              sizes="32px"
             />
           </div>
           <span className="font-bold text-lg font-[family-name:var(--font-heading)]">Zawly</span>

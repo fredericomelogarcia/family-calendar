@@ -87,7 +87,14 @@ export function Sidebar() {
         isCollapsed ? "justify-center px-0" : "gap-3 px-6"
       )}>
         <div className="w-10 h-10 rounded-[--radius-md] bg-primary flex items-center justify-center flex-shrink-0 overflow-hidden">
-          <Image src="/icons/icon-192.png" alt="Zawly" width={40} height={40} className="rounded-[--radius-md]" />
+          <Image 
+            src="/icons/icon-192.png" 
+            alt="Zawly" 
+            width={40} 
+            height={40} 
+            className="rounded-[--radius-md]" 
+            loading="lazy"
+          />
         </div>
         {!isCollapsed && (
           <span className="text-xl font-bold font-[family-name:var(--font-heading)] text-text-primary whitespace-nowrap">
