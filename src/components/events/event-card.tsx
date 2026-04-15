@@ -3,6 +3,8 @@
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { memo } from "react";
+import { PencilSimple } from "@phosphor-icons/react";
+import { Button } from "@/components/ui/button";
 
 interface EventCardProps {
   event: {
@@ -16,7 +18,7 @@ interface EventCardProps {
   showDate?: boolean;
   /** The actual occurrence date to display (differs from event.startDate for recurring events) */
   occurrenceDate?: Date;
-  onClick?: () => void;
+  onEdit?: () => void;
   onLongPress?: () => void;
 }
 
@@ -24,7 +26,7 @@ export const EventCard = memo(function EventCard({
   event, 
   showDate, 
   occurrenceDate, 
-  onClick, 
+  onEdit, 
   onLongPress 
 }: EventCardProps) {
   const startDate = new Date(event.startDate);
@@ -32,26 +34,23 @@ export const EventCard = memo(function EventCard({
   const isAllDay = event.allDay ?? true;
 
   return (
-    <button
-      onClick={onClick}
+    <div
       onContextMenu={(e) => {
         e.preventDefault();
         onLongPress?.();
       }}
       className={cn(
-        "w-full text-left p-4 rounded-[--radius-md] bg-surface border border-border",
-        "hover:shadow-sm hover:border-text-tertiary transition-all duration-150",
-        "flex gap-4 items-start active:scale-[0.99] will-change-transform",
-        onClick && "cursor-pointer"
+        "w-full p-4 rounded-[--radius-md] bg-surface border border-border",
+        "flex gap-4 items-center"
       )}
     >
-      {/* Content */}
+      {/* Content - takes available space */}
       <div className="flex-1 min-w-0">
         <h3 className="font-semibold text-text-primary truncate">
           {event.title}
         </h3>
         
-        <div className="flex items-center gap-2 mt-1.5">
+        <div className="flex items-center gap-2 mt-1">
           <span className={cn(
             "text-xs font-mono",
             isAllDay ? "text-text-secondary" : "text-text-tertiary"
@@ -69,20 +68,23 @@ export const EventCard = memo(function EventCard({
             </span>
           )}
         </div>
-
       </div>
 
-      {/* Chevron (only when clickable) */}
-      {onClick && (
-        <svg 
-          className="w-5 h-5 text-text-tertiary flex-shrink-0" 
-          fill="none" 
-          viewBox="0 0 24 24" 
-          stroke="currentColor"
+      {/* Edit Button on the right */}
+      {onEdit && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={(e) => {
+            e.stopPropagation();
+            onEdit();
+          }}
+          className="flex-shrink-0 p-2 h-auto"
+          aria-label="Edit event"
         >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-        </svg>
+          <PencilSimple size={18} weight="bold" />
+        </Button>
       )}
-    </button>
+    </div>
   );
 });

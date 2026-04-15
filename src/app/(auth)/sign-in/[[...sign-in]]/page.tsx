@@ -1,25 +1,17 @@
-"use client";
-
+import { redirect } from "next/navigation";
+import { auth } from "@clerk/nextjs/server";
 import { Suspense } from "react";
 import { AuthLayout } from "@/components/layout/auth-layout";
 import { SignInForm } from "@/components/auth/sign-in-form";
 import { VerificationBanner } from "@/components/auth/verification-banner";
 
-function SignInContent() {
-  return (
-    <AuthLayout 
-      title="Welcome Back" 
-      subtitle="Sign in to manage your family calendar"
-    >
-      <div className="space-y-6">
-        <VerificationBanner />
-        <SignInForm />
-      </div>
-    </AuthLayout>
-  );
-}
+export default async function SignInPage() {
+  // Redirect to dashboard if already signed in
+  const { userId } = await auth();
+  if (userId) {
+    redirect("/dashboard");
+  }
 
-export default function SignInPage() {
   return (
     <Suspense fallback={
       <AuthLayout 
@@ -32,7 +24,15 @@ export default function SignInPage() {
         </div>
       </AuthLayout>
     }>
-      <SignInContent />
+      <AuthLayout 
+        title="Welcome Back" 
+        subtitle="Sign in to manage your family calendar"
+      >
+        <div className="space-y-6">
+          <VerificationBanner />
+          <SignInForm />
+        </div>
+      </AuthLayout>
     </Suspense>
   );
 }

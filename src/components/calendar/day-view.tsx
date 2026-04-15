@@ -42,7 +42,7 @@ const EventList = memo(function EventList({
         >
           <EventCard 
             event={event} 
-            onClick={onEventClick ? () => onEventClick(event) : undefined}
+            onEdit={onEventClick ? () => onEventClick(event) : undefined}
           />
         </div>
       ))}

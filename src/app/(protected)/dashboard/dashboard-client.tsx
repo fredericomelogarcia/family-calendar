@@ -87,7 +87,7 @@ const EventList = memo(function EventList({
     <div className="space-y-3">
       {events.map((event) => (
         <div key={event.id} className="animate-slide-up" style={{ animationDelay: "0ms" }}>
-          <EventCard event={event} onClick={() => onEventClick(event)} />
+          <EventCard event={event} onEdit={() => onEventClick(event)} />
         </div>
       ))}
     </div>
@@ -399,7 +399,7 @@ export default function DashboardClient({
                   event={event} 
                   showDate 
                   occurrenceDate={date} 
-                  onClick={() => handleEventClick(event)} 
+                  onEdit={() => handleEventClick(event)} 
                 />
               </div>
             ))}
