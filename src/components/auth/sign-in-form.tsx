@@ -23,6 +23,16 @@ const verificationSchema = z.object({
 type SignInValues = z.infer<typeof signInSchema>;
 type VerificationValues = z.infer<typeof verificationSchema>;
 
+const resetPasswordSchema = z.object({
+  password: z.string().min(8, "Password must be at least 8 characters"),
+  confirmPassword: z.string().min(1, "Please confirm your new password"),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
+});
+
+type ResetPasswordValues = z.infer<typeof resetPasswordSchema>;
+
 export function SignInForm() {
   const { signIn, errors: clerkErrors } = useSignIn();
   const { isLoaded } = useAuth();
@@ -49,6 +59,15 @@ export function SignInForm() {
     getValues,
   } = useForm<SignInValues>({
     resolver: zodResolver(signInSchema),
+    mode: "onChange",
+  });
+
+  const {
+    register: registerReset,
+    handleSubmit: handleResetSubmit,
+    formState: { errors: resetErrors, isValid: isResetValid },
+  } = useForm<ResetPasswordValues>({
+    resolver: zodResolver(resetPasswordSchema),
     mode: "onChange",
   });
 
@@ -234,38 +253,40 @@ export function SignInForm() {
 
   const handleResetPasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isLoaded || !signIn || resetPassword.length < 8) return;
+    const values = handleResetSubmit(async (vals: ResetPasswordValues) => {
+      if (!isLoaded || !signIn || vals.password.length < 8) return;
 
-    setIsSubmitting(true);
-    setServerError(null);
+      setIsSubmitting(true);
+      setServerError(null);
 
-    try {
-      const { error } = await signIn.resetPasswordEmailCode.submitPassword({
-        password: resetPassword,
-      });
-
-      if (error) {
-        setServerError(error.longMessage || error.message || "Failed to update password.");
-        return;
-      }
-
-      if (signIn.status === 'complete') {
-        await signIn.finalize({
-          navigate: (url) => {
-            const urlString = typeof url === "string" ? url : "/dashboard";
-            router.push(urlString);
-            return Promise.resolve();
-          },
+      try {
+        const { error } = await signIn.resetPasswordEmailCode.submitPassword({
+          password: vals.password,
         });
-        return;
-      }
 
-      setServerError("Password reset incomplete. Please try again.");
-    } catch (err: any) {
-      setServerError(err.errors?.[0]?.message || "An unexpected error occurred.");
-    } finally {
-      setIsSubmitting(false);
-    }
+        if (error) {
+          setServerError(error.longMessage || error.message || "Failed to update password.");
+          return;
+        }
+
+        if (signIn.status === 'complete') {
+          await signIn.finalize({
+            navigate: (url) => {
+              const urlString = typeof url === "string" ? url : "/dashboard";
+              router.push(urlString);
+              return Promise.resolve();
+            },
+          });
+          return;
+        }
+
+        setServerError("Password reset incomplete. Please try again.");
+      } catch (err: any) {
+        setServerError(err.errors?.[0]?.message || "An unexpected error occurred.");
+      } finally {
+        setIsSubmitting(false);
+      }
+    });
   };
   // ---------------------------
 
@@ -409,8 +430,16 @@ export function SignInForm() {
               label="New Password" 
               type="password" 
               placeholder="••••••••" 
-              value={resetPassword}
-              onChange={(e) => setResetPassword(e.target.value)}
+              {...registerReset("password")}
+              error={resetErrors.password?.message}
+              leftIcon={<LockKey className="w-4 h-4 text-text-tertiary" />}
+            />
+            <Input 
+              label="Confirm New Password" 
+              type="password" 
+              placeholder="••••••••" 
+              {...registerReset("confirmPassword")}
+              error={resetErrors.confirmPassword?.message}
               leftIcon={<LockKey className="w-4 h-4 text-text-tertiary" />}
             />
             {serverError && (
@@ -418,7 +447,7 @@ export function SignInForm() {
                 {serverError}
               </div>
             )}
-            <Button type="submit" className="w-full" loading={isSubmitting} disabled={resetPassword.length < 8 || isSubmitting}>
+            <Button type="submit" className="w-full" loading={isSubmitting} disabled={!isResetValid || isSubmitting}>
               Update Password
             </Button>
           </form>

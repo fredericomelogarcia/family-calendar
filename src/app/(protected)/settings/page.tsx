@@ -483,14 +483,16 @@ export default function SettingsPage() {
     try {
       if (!session) throw new Error("Session not available");
 
-      // For reverification, we use session.prepareFirstFactorVerification 
-      // but since it's already been prepared, we usually need to trigger 
-      // the a la 'sendCode' behavior. 
-      // Clerk's reverification API typically sends the code during startVerification 
-      // or prepareFirstFactorVerification.
+      // For reverification, we must provide the emailAddressId
+      // Since we are already in the verification flow, we find the supported factor
+      const resource = await session.startVerification({ level: 'first_factor' });
+      const factor = resource.supportedFirstFactors?.find(f => f.strategy === 'email_code');
       
+      if (!factor) throw new Error("Email verification not supported");
+
       await session.prepareFirstFactorVerification({
-        strategy: 'email_code',
+        strategy: factor.strategy,
+        emailAddressId: factor.emailAddressId,
       });
 
       showToast("success", "A new code has been sent to your email.");
