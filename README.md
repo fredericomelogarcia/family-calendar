@@ -38,13 +38,3 @@ Zawly is a modern, collaborative family calendar application designed to help fa
 
 ---
 
-## 🚀 Getting Started
-
-### Prerequisites
-- Node.js 20+
-- pnpm
-- A PostgreSQL database (Supabase recommended)
-- Clerk Account
-- Resend Account
-
----
