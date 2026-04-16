@@ -22,6 +22,8 @@ interface Event {
 export default async function CalendarPage() {
   const { userId } = await auth();
   
+  // Note: userId is guaranteed by proxy.ts (clerkMiddleware)
+  // but we'll keep the check as a safety fallback if proxy.ts is ever modified.
   if (!userId) {
     redirect("/sign-in");
   }

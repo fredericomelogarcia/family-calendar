@@ -15,9 +15,16 @@ export async function GET(request: NextRequest) {
     const id = searchParams.get("id");
 
     if (id) {
-      const event = await db.query.events.findFirst({
-        where: eq(events.id, id),
+      const user = await db.query.users.findFirst({
+        where: eq(users.id, userId),
+        columns: { familyId: true },
       });
+
+      const event = await db.query.events.findFirst({
+        where: and(eq(events.id, id), eq(events.familyId, user?.familyId)),
+      });
+
+      if (!event) return NextResponse.json({ error: "Event not found" }, { status: 404 });
       return NextResponse.json({ event });
     }
 
@@ -137,10 +144,18 @@ export async function PATCH(request: NextRequest) {
     if (body.recurrence !== undefined) updates.recurrence = body.recurrence;
     if (body.excludedDates !== undefined) updates.excludedDates = body.excludedDates;
 
-    // Single query: update + return — if no row matches, result is empty
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, userId),
+      columns: { familyId: true },
+    });
+
+    if (!user?.familyId) {
+      return NextResponse.json({ error: "No family found" }, { status: 400 });
+    }
+
     const [updatedEvent] = await db.update(events)
       .set(updates)
-      .where(eq(events.id, id))
+      .where(and(eq(events.id, id), eq(events.familyId, user.familyId)))
       .returning();
 
     if (!updatedEvent) {
@@ -171,9 +186,18 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Event ID required" }, { status: 400 });
     }
 
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, userId),
+      columns: { familyId: true },
+    });
+
+    if (!user?.familyId) {
+      return NextResponse.json({ error: "No family found" }, { status: 400 });
+    }
+
     // Single query to check existence — only select columns we need
     const existingEvent = await db.query.events.findFirst({
-      where: eq(events.id, id),
+      where: and(eq(events.id, id), eq(events.familyId, user.familyId)),
       columns: { recurrence: true, excludedDates: true, startDate: true },
     });
 
@@ -191,7 +215,7 @@ export async function DELETE(request: NextRequest) {
       }
       await db.update(events)
         .set({ excludedDates, updatedAt: new Date() })
-        .where(eq(events.id, id));
+        .where(and(eq(events.id, id), eq(events.familyId, user.familyId)));
 
       return NextResponse.json({ success: true, excludedDates });
     }
@@ -206,7 +230,7 @@ export async function DELETE(request: NextRequest) {
 
       // If occurrence is on or before the start date — just delete the whole event
       if (occurrenceDay <= eventStartDay) {
-        await db.delete(events).where(eq(events.id, id));
+        await db.delete(events).where(and(eq(events.id, id), eq(events.familyId, user.familyId)));
         return NextResponse.json({ success: true });
       }
 
@@ -225,13 +249,13 @@ export async function DELETE(request: NextRequest) {
           excludedDates: cleanedExcluded.length > 0 ? cleanedExcluded : null,
           updatedAt: new Date(),
         })
-        .where(eq(events.id, id));
+        .where(and(eq(events.id, id), eq(events.familyId, user.familyId)));
 
       return NextResponse.json({ success: true, endDate: newEndDate.toISOString() });
     }
 
     // Full delete (non-recurring, or recurring with no date context)
-    await db.delete(events).where(eq(events.id, id));
+    await db.delete(events).where(and(eq(events.id, id), eq(events.familyId, user.familyId)));
 
     return NextResponse.json({ success: true });
   } catch (error) {

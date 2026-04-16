@@ -181,11 +181,7 @@ export default function CalendarClient({ initialEvents, hasFamily: initialHasFam
     );
   }
 
-  if (!user) {
-    router.push("/sign-in");
-    return null;
-  }
-
+  // Remove redundant auth check: this is handled by proxy.ts
   if (!initialHasFamily) {
     // Redirect to onboarding if no family
     router.push("/onboarding");
@@ -296,7 +292,7 @@ export default function CalendarClient({ initialEvents, hasFamily: initialHasFam
               endDate: editingEvent.endDate,
               allDay: editingEvent.allDay,
               notes: editingEvent.notes,
-              recurrence: (editingEvent.recurrence as any) || "none",
+              recurrence: editingEvent.recurrence || "none",
             }}
             defaultDate={occurrenceDate || editingEvent.startDate}
             mode="edit"
