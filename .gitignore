@@ -32,6 +32,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -46,6 +47,7 @@ CLAUDE.md
 .pi/
 data/
 drizzle/
+skills-lock.json
 
 # Sentry Config File
 .env.sentry-build-plugin

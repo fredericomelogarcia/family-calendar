@@ -35,6 +35,3 @@ Zawly is a modern, collaborative family calendar application designed to help fa
 - **Emails:** [Resend](https://resend.com/)
 - **Icons:** [Phosphor Icons](https://phosphor.icons/)
 - **Date Manipulation:** [date-fns](https://date-fns.org/) & [rrule](https://rrule.js.org/)
-
----
-
