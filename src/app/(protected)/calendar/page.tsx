@@ -15,7 +15,7 @@ interface Event {
   endDate?: Date;
   allDay: boolean;
   notes?: string;
-  recurrence?: string;
+  recurrence?: "none" | "daily" | "weekly" | "biweekly" | "triweekly" | "quadweekly" | "monthly" | "yearly";
   excludedDates?: string[];
 }
 

@@ -30,7 +30,7 @@ interface Event {
   endDate?: Date;
   allDay: boolean;
   notes?: string;
-  recurrence?: string;
+  recurrence?: EventFormData["recurrence"];
   excludedDates?: string[];
 }
 

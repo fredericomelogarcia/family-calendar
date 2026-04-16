@@ -20,8 +20,12 @@ export async function GET(request: NextRequest) {
         columns: { familyId: true },
       });
 
+      if (!user?.familyId) {
+        return NextResponse.json({ error: "No family found" }, { status: 400 });
+      }
+
       const event = await db.query.events.findFirst({
-        where: and(eq(events.id, id), eq(events.familyId, user?.familyId)),
+        where: and(eq(events.id, id), eq(events.familyId, user.familyId)),
       });
 
       if (!event) return NextResponse.json({ error: "Event not found" }, { status: 404 });
