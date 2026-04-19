@@ -19,6 +19,7 @@ const DeleteEventModal = lazy(() => import("@/components/events/delete-event-mod
 const AUTO_REFRESH_STORAGE_KEY = "zawly-dashboard-auto-refresh";
 const AUTO_REFRESH_INTERVAL_MS = 30 * 60 * 1000;
 const AUTO_REFRESH_INTERVAL_SEC = 30 * 60;
+const DAY_ROLLOVER_CHECK_MS = 60 * 1000;
 
 interface Event {
   id: string;
@@ -108,7 +109,7 @@ export default function DashboardClient({
   const { user, isLoaded } = useUser();
   const router = useRouter();
   
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(() => startOfDay(new Date()));
   const [events, setEvents] = useState<Event[]>(initialEvents);
   const [loading, setLoading] = useState(initialEvents.length === 0);
   const [showEventForm, setShowEventForm] = useState(false);
@@ -120,6 +121,14 @@ export default function DashboardClient({
   const [hasFamily, setHasFamily] = useState<boolean | null>(initialHasFamily);
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false);
   const [countdownSeconds, setCountdownSeconds] = useState(AUTO_REFRESH_INTERVAL_SEC);
+
+  const syncSelectedDateToToday = useCallback(() => {
+    const today = startOfDay(new Date());
+    if (isSameDay(selectedDate, today)) return false;
+
+    setSelectedDate(today);
+    return true;
+  }, [selectedDate]);
 
   // Load auto-refresh preference
   useEffect(() => {
@@ -175,6 +184,27 @@ export default function DashboardClient({
       setLoading(false);
     }
   }, [fetchEvents]);
+
+  // Keep long-running dashboard sessions aligned with the local calendar day.
+  useEffect(() => {
+    const handlePossibleDayChange = () => {
+      if (syncSelectedDateToToday()) {
+        fetchEvents();
+        setCountdownSeconds(AUTO_REFRESH_INTERVAL_SEC);
+      }
+    };
+
+    handlePossibleDayChange();
+    const interval = setInterval(handlePossibleDayChange, DAY_ROLLOVER_CHECK_MS);
+    window.addEventListener("focus", handlePossibleDayChange);
+    document.addEventListener("visibilitychange", handlePossibleDayChange);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("focus", handlePossibleDayChange);
+      document.removeEventListener("visibilitychange", handlePossibleDayChange);
+    };
+  }, [fetchEvents, syncSelectedDateToToday]);
 
   // Filter today's events - memoized
   const selectedDateEvents = useMemo(() => 
