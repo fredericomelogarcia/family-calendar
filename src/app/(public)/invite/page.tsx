@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useRouter, useSearchParams } from "next/navigation";
 import { 
@@ -24,25 +24,6 @@ function InviteContent() {
   const [errorMessage, setErrorMessage] = useState("");
   const [familyName, setFamilyName] = useState("");
 
-  useEffect(() => {
-    if (!isLoaded) return;
-
-    if (!token) {
-      setStatus("error");
-      setErrorMessage("Invalid invitation link. Please check your email and try again.");
-      return;
-    }
-
-    // If not signed in, show sign-in prompt
-    if (!user) {
-      setStatus("signin");
-      return;
-    }
-
-    // User is signed in, proceed to accept invitation
-    acceptInvitation();
-  }, [user, isLoaded, token]);
-
   const acceptInvitation = async () => {
     if (!token) return;
     
@@ -60,20 +41,35 @@ function InviteContent() {
       if (res.ok) {
         setStatus("success");
         setFamilyName(data.family?.name || "");
-        // Wait longer to ensure DB is updated, then use hard redirect
         setTimeout(() => {
-          // Use timestamp to bust any cache
           window.location.href = `/dashboard?t=${Date.now()}`;
         }, 2000);
       } else {
         setStatus("error");
         setErrorMessage(data.error || "Failed to accept invitation");
       }
-    } catch (error) {
+    } catch {
       setStatus("error");
       setErrorMessage("Something went wrong. Please try again.");
     }
   };
+
+  useEffect(() => {
+    if (!isLoaded) return;
+
+    if (!token) {
+      setStatus("error");
+      setErrorMessage("Invalid invitation link. Please check your email and try again.");
+      return;
+    }
+
+    if (!user) {
+      setStatus("signin");
+      return;
+    }
+
+    acceptInvitation();
+  }, [user, isLoaded, token]);
 
   if (!isLoaded || status === "loading") {
     return (
@@ -93,36 +89,11 @@ function InviteContent() {
           <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
             <CalendarCheck size={40} className="text-primary" />
           </div>
-          
-          <h1 className="text-2xl font-bold text-text-primary mb-2">
-            You've Been Invited!
-          </h1>
-          <p className="text-text-secondary mb-8">
-            Sign in or create an account to join the family calendar.
-          </p>
-
-          <div className="space-y-3">
-            <Link 
-              href={`/sign-in?redirect_url=${encodeURIComponent(`/invite?token=${token}`)}`}
-              className="block w-full"
-            >
-              <Button className="w-full" leftIcon={<SignIn size={18} />}>
-                Sign In
-              </Button>
-            </Link>
-            <Link 
-              href={`/sign-up?redirect_url=${encodeURIComponent(`/invite?token=${token}`)}`}
-              className="block w-full"
-            >
-              <Button variant="secondary" className="w-full">
-                Create Account
-              </Button>
-            </Link>
-          </div>
-
-          <p className="text-xs text-text-tertiary mt-6">
-            After signing in, you'll automatically join the family.
-          </p>
+          <h1 className="text-2xl font-bold text-text-primary mb-2">Join the Family</h1>
+          <p className="text-text-secondary mb-6">Sign in to accept this invitation</p>
+          <Button onClick={() => router.push("/sign-in")} leftIcon={<SignIn size={18} />} className="w-full">
+            Sign In
+          </Button>
         </div>
       </div>
     );
@@ -133,12 +104,7 @@ function InviteContent() {
       <div className="flex-1 flex items-center justify-center py-20">
         <div className="text-center">
           <Spinner size={40} className="animate-spin text-primary mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-text-primary mb-2">
-            Joining Family...
-          </h2>
-          <p className="text-text-secondary">
-            Setting up your calendar access
-          </p>
+          <p className="text-text-secondary">Accepting invitation...</p>
         </div>
       </div>
     );
@@ -146,62 +112,39 @@ function InviteContent() {
 
   if (status === "success") {
     return (
-      <div className="flex-1 flex items-center justify-center py-20 p-6">
+      <div className="flex-1 flex items-center justify-center py-20 px-6">
         <div className="w-full max-w-md text-center">
-          <div className="w-20 h-20 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-6">
-            <CheckCircle size={40} className="text-success" weight="fill" />
+          <div className="w-20 h-20 rounded-full bg-success/15 flex items-center justify-center mx-auto mb-6">
+            <CheckCircle size={40} weight="fill" className="text-success" />
           </div>
-          
-          <h1 className="text-2xl font-bold text-text-primary mb-2">
-            Welcome to {familyName || "the Family"}!
-          </h1>
-          <p className="text-text-secondary mb-6">
-            You've successfully joined the family calendar.
-          </p>
-
-          <div className="flex items-center justify-center gap-2 text-sm text-text-tertiary mb-6">
-            <Users size={18} />
-            <span>You can now view and add family events</span>
-          </div>
-
-          <Button onClick={() => router.push("/dashboard")} className="w-full">
-            Go to Dashboard
-          </Button>
+          <h1 className="text-2xl font-bold text-text-primary mb-2">You're In!</h1>
+          <p className="text-text-secondary mb-2">Welcome to {familyName}</p>
+          <p className="text-text-secondary">Redirecting to dashboard...</p>
         </div>
       </div>
     );
   }
 
-  // Error state
-  return (
-    <div className="flex-1 flex items-center justify-center py-20 p-6">
-      <div className="w-full max-w-md text-center">
-        <div className="w-20 h-20 rounded-full bg-error/10 flex items-center justify-center mx-auto mb-6">
-          <XCircle size={40} className="text-error-dark" weight="fill" />
-        </div>
-        
-        <h1 className="text-2xl font-bold text-text-primary mb-2">
-          Couldn't Join Family
-        </h1>
-        <p className="text-text-secondary mb-6">
-          {errorMessage || "Something went wrong."}
-        </p>
-
-        <div className="space-y-3">
-          {token && (
-            <Button onClick={acceptInvitation} variant="secondary" className="w-full">
-              Try Again
-            </Button>
-          )}
-          <Link href="/dashboard" className="block">
-            <Button className="w-full">
-              Go to Dashboard
+  if (status === "error") {
+    return (
+      <div className="flex-1 flex items-center justify-center py-20 px-6">
+        <div className="w-full max-w-md text-center">
+          <div className="w-20 h-20 rounded-full bg-error/10 flex items-center justify-center mx-auto mb-6">
+            <XCircle size={40} weight="fill" className="text-error-dark" />
+          </div>
+          <h1 className="text-2xl font-bold text-text-primary mb-2">Oops!</h1>
+          <p className="text-text-secondary mb-6">{errorMessage}</p>
+          <Link href="/">
+            <Button variant="secondary" leftIcon={<Users size={18} />}>
+              Go Home
             </Button>
           </Link>
         </div>
       </div>
-    </div>
-  );
+    );
+  }
+
+  return null;
 }
 
 export default function InvitePage() {

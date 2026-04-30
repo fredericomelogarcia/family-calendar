@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, boolean, jsonb, index } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, boolean, jsonb, index, varchar } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
 // Families table
@@ -6,6 +6,7 @@ export const families = pgTable("families", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
   inviteCode: text("invite_code").notNull().unique(),
+  country: text("country"), // ISO 3166-1 alpha-2 code (e.g., "US", "GB")
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
@@ -55,6 +56,9 @@ export const events = pgTable("events", {
   startDate: timestamp("start_date", { withTimezone: true }).notNull(),
   endDate: timestamp("end_date", { withTimezone: true }),
   allDay: boolean("all_day").notNull().default(true),
+  startTime: varchar("start_time", { length: 5 }),
+  endTime: varchar("end_time", { length: 5 }),
+  recurrenceEndDate: timestamp("recurrence_end_date", { withTimezone: true }),
   notes: text("notes"),
   recurrence: text("recurrence", { enum: ["none", "daily", "weekly", "biweekly", "triweekly", "quadweekly", "monthly", "yearly"] }).notNull().default("none"),
   excludedDates: jsonb("excluded_dates").$type<string[] | null>(),

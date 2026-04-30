@@ -84,6 +84,7 @@ export function ContactFormModal({ isOpen, onClose }: ContactFormModalProps) {
       onClose={handleClose}
       title={submitted ? undefined : "Contact Us"}
       showCloseButton={true}
+      size="sm"
     >
       {submitted ? (
         <div className="flex flex-col items-center justify-center py-8 text-center space-y-4">

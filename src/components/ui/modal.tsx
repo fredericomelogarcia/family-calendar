@@ -1,9 +1,9 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
 import { X } from "@phosphor-icons/react";
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState, useRef } from "react";
+import { createPortal } from "react-dom";
 
 interface ModalProps {
   isOpen: boolean;
@@ -12,8 +12,16 @@ interface ModalProps {
   children: React.ReactNode;
   className?: string;
   showCloseButton?: boolean;
-  size?: "sm" | "md" | "lg" | "full";
+  size?: "sm" | "md" | "lg" | "xl" | "full";
 }
+
+const sizeClasses = {
+  sm: "max-w-sm w-[95vw] sm:w-[90vw]",
+  md: "max-w-md w-[95vw] sm:w-[90vw]",
+  lg: "max-w-2xl w-[95vw] sm:w-[90vw]",
+  xl: "max-w-3xl w-[95vw] sm:w-[90vw]",
+  full: "max-w-full w-[98vw]",
+};
 
 export function Modal({
   isOpen,
@@ -24,75 +32,91 @@ export function Modal({
   showCloseButton = true,
   size = "md",
 }: ModalProps) {
-  const handleEscape = useCallback((e: KeyboardEvent) => {
-    if (e.key === "Escape") onClose();
+  const [isVisible, setIsVisible] = useState(false);
+  const [isAnimatingOut, setIsAnimatingOut] = useState(false);
+  const onCloseRef = useRef(onClose);
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
   }, [onClose]);
 
   useEffect(() => {
-    if (isOpen) {
-      document.addEventListener("keydown", handleEscape);
+    if (isOpen && !isVisible) {
+      setIsVisible(true);
+      setIsAnimatingOut(false);
       document.body.style.overflow = "hidden";
-    }
-    return () => {
-      document.removeEventListener("keydown", handleEscape);
+    } else if (!isOpen && isVisible && !isAnimatingOut) {
+      setIsAnimatingOut(true);
       document.body.style.overflow = "";
+      setTimeout(() => {
+        setIsVisible(false);
+        setIsAnimatingOut(false);
+        onCloseRef.current();
+      }, 150);
+    }
+  }, [isOpen, isVisible, isAnimatingOut]);
+
+  const handleClose = useCallback(() => {
+    if (isVisible && !isAnimatingOut) {
+      setIsAnimatingOut(true);
+      document.body.style.overflow = "";
+      setTimeout(() => {
+        setIsVisible(false);
+        setIsAnimatingOut(false);
+        onCloseRef.current();
+      }, 150);
+    }
+  }, [isVisible, isAnimatingOut]);
+
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") handleClose();
     };
-  }, [isOpen, handleEscape]);
+    if (isVisible) {
+      document.addEventListener("keydown", handleEscape);
+      return () => document.removeEventListener("keydown", handleEscape);
+    }
+  }, [isVisible, handleClose]);
 
-  const sizeClasses = {
-    sm: "max-w-sm",
-    md: "max-w-md",
-    lg: "max-w-lg",
-    full: "max-w-full",
-  };
+  if (!isVisible) return null;
 
-  return (
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-text-primary/60 backdrop-blur-sm"
-            onClick={onClose}
-          />
-          
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className={cn(
-              "fixed z-50 bg-surface shadow-2xl overflow-hidden flex flex-col",
-              "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2",
-              "rounded-[--radius-lg] border border-border",
-              "w-[95vw] max-w-md lg:max-w-2xl",
-              "max-h-[90vh]",
-              className
-            )}
-          >
-            <div className="flex items-center justify-between p-4 lg:p-6 border-b border-border flex-shrink-0">
-              {title && (
-                <h2 className="text-lg font-bold text-text-primary font-[family-name:var(--font-heading)]">
-                  {title}
-                </h2>
-              )}
-              {showCloseButton && (
-                <button
-                  onClick={onClose}
-                  className="p-2 text-text-secondary hover:text-text-primary transition-colors rounded-full hover:bg-surface-alt"
-                >
-                  <X size={20} weight="bold" />
-                </button>
-              )}
-            </div>
-            
-            <div className="overflow-y-auto p-4 lg:p-6 custom-scrollbar">
-              {children}
-            </div>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
+  const overlayClass = cn(
+    "fixed inset-0 z-[100] bg-text-primary/60 backdrop-blur-sm flex items-center justify-center p-4",
+    isAnimatingOut ? "animate-fade-out" : "animate-fade-in"
+  );
+
+  const contentClass = cn(
+    "bg-surface shadow-2xl rounded-[--radius-lg] border border-border flex flex-col",
+    "w-full max-h-[90vh]",
+    sizeClasses[size],
+    isAnimatingOut ? "animate-scale-out" : "animate-scale-in",
+    className
+  );
+
+  return createPortal(
+    <div className={overlayClass} onClick={handleClose}>
+      <div className={contentClass} onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between p-4 lg:p-6 border-b border-border flex-shrink-0">
+          {title && (
+            <h2 className="text-lg font-bold text-text-primary font-[family-name:var(--font-heading)]">
+              {title}
+            </h2>
+          )}
+          {!title && <div />}
+          {showCloseButton && (
+            <button
+              onClick={handleClose}
+              className="p-2 text-text-secondary hover:text-text-primary transition-colors rounded-full hover:bg-surface-alt"
+            >
+              <X size={20} weight="bold" />
+            </button>
+          )}
+        </div>
+        <div className="overflow-y-auto p-4 lg:p-6 custom-scrollbar">
+          {children}
+        </div>
+      </div>
+    </div>,
+    document.body
   );
 }

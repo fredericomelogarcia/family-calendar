@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo, useEffect, Suspense, lazy } from "react";
-import { useUser } from "@clerk/nextjs";
+import { useState, useCallback, useMemo, useEffect, Suspense, lazy, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   format,
@@ -11,9 +10,9 @@ import {
   endOfMonth,
   setMonth,
   setYear,
+  addDays,
 } from "date-fns";
 import { CaretLeft, CaretRight } from "@phosphor-icons/react";
-import { Button } from "@/components/ui/button";
 import { MonthGrid } from "@/components/calendar/month-grid";
 import { DayView } from "@/components/calendar/day-view";
 import { showToast } from "@/components/ui/toast";
@@ -29,9 +28,13 @@ interface Event {
   startDate: Date;
   endDate?: Date;
   allDay: boolean;
+  startTime?: string;
+  endTime?: string;
   notes?: string;
   recurrence?: EventFormData["recurrence"];
   excludedDates?: string[];
+  isHoliday?: boolean;
+  recurrenceEndDate?: Date;
 }
 
 interface CalendarClientProps {
@@ -49,8 +52,12 @@ function ModalLoading() {
 }
 
 export default function CalendarClient({ initialEvents, hasFamily: initialHasFamily }: CalendarClientProps) {
-  const { user, isLoaded } = useUser();
   const router = useRouter();
+
+  // Extract and store holidays from initial events
+  const holidaysRef = useRef<Event[]>(
+    initialEvents.filter(e => e.isHoliday)
+  );
 
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -74,15 +81,25 @@ export default function CalendarClient({ initialEvents, hasFamily: initialHasFam
         ...event,
         startDate: new Date(event.startDate),
         endDate: event.endDate ? new Date(event.endDate) : undefined,
+        recurrenceEndDate: event.recurrenceEndDate ? new Date(event.recurrenceEndDate) : undefined,
       }));
-      setEvents(parsedEvents);
+      
+      // Merge holidays with fetched family events
+      const holidays = holidaysRef.current;
+      setEvents([...parsedEvents, ...holidays]);
     } catch (error) {
       console.error("Error fetching events:", error);
     }
   }, [currentDate]);
 
-  // Fetch events when currentDate (month) changes
+  // Only fetch when navigating to a different month (not on initial mount)
+  const hasFetchedInitialRef = useRef(true);
+
   useEffect(() => {
+    if (hasFetchedInitialRef.current) {
+      hasFetchedInitialRef.current = false;
+      return;
+    }
     fetchEvents();
   }, [currentDate, fetchEvents]);
 
@@ -102,13 +119,17 @@ export default function CalendarClient({ initialEvents, hasFamily: initialHasFam
     }
   }, [fetchEvents]);
 
-  const handleEditEvent = useCallback(async (data: EventFormData) => {
+  const handleEditEvent = useCallback(async (data: EventFormData, options?: { clearExcludedDates?: boolean }) => {
     if (!editingEvent) return;
     try {
+      const body: Record<string, unknown> = { id: editingEvent.id, ...data };
+      if (options?.clearExcludedDates) {
+        body.excludedDates = null;
+      }
       const res = await fetch("/api/events", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: editingEvent.id, ...data }),
+        body: JSON.stringify(body),
       });
       if (!res.ok) throw new Error("Failed to update event");
       showToast("success", "Event updated!");
@@ -165,20 +186,13 @@ export default function CalendarClient({ initialEvents, hasFamily: initialHasFam
     "July","August","September","October","November","December"
   ], []);
   
-  const years = useMemo(() => 
+  const years = useMemo(() =>
     Array.from({ length: 21 }, (_, i) => new Date().getFullYear() - 10 + i),
-    []
-  );
+  []);
 
-  if (!isLoaded) {
-    return (
-      <div className="min-h-full flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 rounded-full border-4 border-primary border-t-transparent animate-spin" />
-          <p className="text-text-secondary">Loading...</p>
-        </div>
-      </div>
-    );
+  if (!initialHasFamily) {
+    router.push("/onboarding");
+    return null;
   }
 
   // Remove redundant auth check: this is handled by proxy.ts
@@ -245,12 +259,12 @@ export default function CalendarClient({ initialEvents, hasFamily: initialHasFam
       {/* Main Content Grid - Removed framer-motion wrapper */}
       <div className="flex flex-col xl:flex-row gap-6">
         <div className="bg-surface rounded-[--radius-lg] border border-border p-4 lg:p-6 w-full xl:flex-1 animate-fade-in">
-          <MonthGrid 
-            currentMonth={currentDate} 
-            selectedDate={selectedDate} 
-            onSelectDate={setSelectedDate} 
-            events={events} 
-          />
+<MonthGrid 
+              currentMonth={currentDate} 
+              selectedDate={selectedDate} 
+              onSelectDate={setSelectedDate} 
+              events={events}
+            />
         </div>
 
         <div className="w-full xl:w-[340px] xl:flex-shrink-0 flex flex-col">
@@ -288,7 +302,7 @@ export default function CalendarClient({ initialEvents, hasFamily: initialHasFam
             }}
             initialData={{
               title: editingEvent.title,
-              startDate: occurrenceDate || editingEvent.startDate,
+              startDate: editingEvent.startDate,
               endDate: editingEvent.endDate,
               allDay: editingEvent.allDay,
               notes: editingEvent.notes,
@@ -296,6 +310,7 @@ export default function CalendarClient({ initialEvents, hasFamily: initialHasFam
             }}
             defaultDate={occurrenceDate || editingEvent.startDate}
             mode="edit"
+            disableDate={!!(editingEvent.recurrence && editingEvent.recurrence !== "none")}
           />
         )}
       </Suspense>

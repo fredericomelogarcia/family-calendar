@@ -1,10 +1,11 @@
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
-import { events, users } from "@/lib/db/schema";
+import { events, users, families } from "@/lib/db/schema";
 import { eq, and, lte, gte } from "drizzle-orm";
 import { startOfDay, endOfDay, addDays } from "date-fns";
 import DashboardClient from "./dashboard-client";
+import { getHolidaysForYear } from "@/lib/holidays";
 
 // Force dynamic and disable caching
 export const dynamic = "force-dynamic";
@@ -20,9 +21,12 @@ interface Event {
   startDate: Date;
   endDate?: Date;
   allDay: boolean;
+  startTime?: string;
+  endTime?: string;
   notes?: string;
   recurrence?: string;
-  startTime?: string;
+  isHoliday?: boolean;
+  recurrenceEndDate?: Date;
 }
 
 export default async function DashboardPage() {
@@ -53,10 +57,17 @@ export default async function DashboardPage() {
     redirect("/onboarding");
   }
 
+  // Fetch family's country
+  const family = await db.query.families.findFirst({
+    where: eq(families.id, user.familyId),
+    columns: { country: true },
+  });
+
   // Fetch events server-side with date range
   const today = new Date();
-  const startDate = addDays(startOfDay(today), -7);
-  const endDate = addDays(endOfDay(today), 30);
+  const currentYear = today.getFullYear();
+  const startDate = addDays(startOfDay(today), -730); // ~2 years back
+  const endDate = addDays(endOfDay(today), 60); // ~2 months ahead
 
   const eventsList = await db.query.events.findMany({
     where: and(
@@ -74,9 +85,33 @@ export default async function DashboardPage() {
     startDate: new Date(event.startDate),
     endDate: event.endDate ? new Date(event.endDate) : undefined,
     allDay: event.allDay ?? true,
+    startTime: event.startTime ?? undefined,
+    endTime: event.endTime ?? undefined,
     notes: event.notes ?? undefined,
     recurrence: event.recurrence,
+    recurrenceEndDate: event.recurrenceEndDate ? new Date(event.recurrenceEndDate) : undefined,
   }));
+
+  // Add holidays to events
+  if (family?.country) {
+    const holidays = await getHolidaysForYear(family.country, currentYear);
+    holidays.forEach(h => {
+      const holidayDate = new Date(h.date);
+      // Only add if within our date range
+      if (holidayDate >= startDate && holidayDate <= endDate) {
+        parsedEvents.push({
+          id: `holiday-${h.date}`,
+          title: h.name,
+          startDate: holidayDate,
+          allDay: true,
+          isHoliday: true,
+        });
+      }
+    });
+  }
+
+  // Sort events by date
+  parsedEvents.sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
 
   return (
     <DashboardClient

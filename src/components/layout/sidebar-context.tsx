@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, createContext, useContext } from "react";
+import { useState, useCallback, createContext, useContext } from "react";
 
 type SidebarContextType = {
   isCollapsed: boolean;
@@ -14,24 +14,28 @@ const SidebarContext = createContext<SidebarContextType>({
   setCollapsed: () => {},
 });
 
-export function SidebarProvider({ children }: { children: React.ReactNode }) {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+function getInitialCollapsed(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return localStorage.getItem("zawly-sidebar-collapsed") === "true";
+  } catch {
+    return false;
+  }
+}
 
-  useEffect(() => {
-    const saved = localStorage.getItem("zawly-sidebar-collapsed");
-    if (saved === "true") {
-      setIsCollapsed(true);
-    }
-  }, []);
+export function SidebarProvider({ children }: { children: React.ReactNode }) {
+  const [isCollapsed, setIsCollapsed] = useState(getInitialCollapsed);
 
   const setCollapsed = useCallback((v: boolean) => {
     setIsCollapsed(v);
-    localStorage.setItem("zawly-sidebar-collapsed", String(v));
+    try {
+      localStorage.setItem("zawly-sidebar-collapsed", String(v));
+    } catch { /* localStorage unavailable */ }
   }, []);
 
   const toggle = useCallback(() => {
-    setCollapsed(!isCollapsed);
-  }, [isCollapsed, setCollapsed]);
+    setIsCollapsed(prev => !prev);
+  }, []);
 
   return (
     <SidebarContext.Provider value={{ isCollapsed, toggle, setCollapsed }}>

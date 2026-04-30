@@ -10,6 +10,7 @@ export function isEventOnDay(event: any, day: Date): boolean {
   // Convert everything to date-only to avoid timezone issues
   const start = toDateOnly(event.startDate);
   const end = event.endDate ? toDateOnly(event.endDate) : null;
+  const recurrenceEnd = event.recurrenceEndDate ? toDateOnly(event.recurrenceEndDate) : null;
   const target = toDateOnly(day);
 
   // Check if this date is excluded
@@ -20,9 +21,10 @@ export function isEventOnDay(event: any, day: Date): boolean {
     }
   }
 
-  // Day must be on or after start, and on or before end
+  // Day must be on or after start, and on or before end (or recurrenceEnd)
   if (target < start) return false;
   if (end && target > end) return false;
+  if (recurrenceEnd && target > recurrenceEnd) return false;
 
   // Non-recurring: exact date match
   if (!event.recurrence || event.recurrence === "none") {

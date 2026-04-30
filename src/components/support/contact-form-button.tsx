@@ -10,18 +10,16 @@ export function ContactFormButton() {
 
   return (
     <>
-      <div className="pt-4 border-t border-border w-full">
-        <p className="text-sm text-text-secondary mb-3">
-          Have feedback, a feature request, or found a bug? We'd love to hear from you!
-        </p>
-        <Button
-          variant="secondary"
-          onClick={() => setIsOpen(true)}
-          leftIcon={<EnvelopeSimple size={18} />}
-        >
-          Contact Us
-        </Button>
-      </div>
+      <p className="text-sm text-text-secondary mb-3">
+        Have feedback, a feature request, or found a bug? We'd love to hear from you!
+      </p>
+      <Button
+        variant="secondary"
+        onClick={() => setIsOpen(true)}
+        leftIcon={<EnvelopeSimple size={18} />}
+      >
+        Contact Us
+      </Button>
 
       <ContactFormModal isOpen={isOpen} onClose={() => setIsOpen(false)} />
     </>

@@ -4,23 +4,19 @@ import { cn } from "@/lib/utils";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
-import { House, CalendarBlank, Plus, Gear, Heart, SidebarSimple as SidebarCollapseIcon, Sidebar as SidebarExpandIcon } from "@phosphor-icons/react";
+import { House, CalendarBlank, Plus, Gear, Wallet, SidebarSimple as SidebarCollapseIcon, Sidebar as SidebarExpandIcon } from "@phosphor-icons/react";
 import { useSidebar } from "@/components/layout/sidebar-context";
 
 const navItems = [
   { href: "/dashboard", icon: House, label: "Home" },
   { href: "/calendar", icon: CalendarBlank, label: "Calendar" },
   { href: "/events/new", icon: Plus, label: "Add", isSpecial: true },
-  { href: "/support", icon: Heart, label: "Support" },
+  { href: "/expenses", icon: Wallet, label: "Expenses" },
   { href: "/settings", icon: Gear, label: "Settings" },
 ];
 
 export function BottomNav() {
-  const { isSignedIn } = useUser();
   const pathname = usePathname();
-
-  if (!isSignedIn) return null;
 
   return (
     <nav className="fixed bottom-6 left-4 right-4 bg-surface rounded-full border border-border shadow-xl shadow-text-primary/10 safe-area-bottom lg:hidden z-40">
@@ -66,11 +62,8 @@ export function BottomNav() {
 }
 
 export function Sidebar() {
-  const { isSignedIn } = useUser();
   const pathname = usePathname();
   const { isCollapsed, toggle } = useSidebar();
-
-  if (!isSignedIn) return null;
 
   return (
     <aside

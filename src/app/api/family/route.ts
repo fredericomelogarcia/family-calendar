@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { action, familyName, inviteCode } = body;
+    const { action, familyName, country, inviteCode } = body;
 
     // Only select the columns we need to check
     const existingUser = await db.query.users.findFirst({
@@ -130,6 +130,7 @@ export async function POST(request: NextRequest) {
         id: familyId,
         name: familyName,
         inviteCode: code,
+        country: country || "US",
       }).returning();
 
       // Update user as admin
@@ -278,12 +279,22 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { familyName } = body;
+    const { familyName, country } = body;
+
+    const updates: { name?: string; country?: string; updatedAt: Date } = { updatedAt: new Date() };
 
     if (familyName && familyName.length >= 2) {
+      updates.name = familyName;
+    }
+
+    if (country && typeof country === "string") {
+      updates.country = country;
+    }
+
+    if (Object.keys(updates).length > 1) {
       // Single query: update + return
       const [updatedFamily] = await db.update(families)
-        .set({ name: familyName, updatedAt: new Date() })
+        .set(updates)
         .where(eq(families.id, user.familyId))
         .returning();
 

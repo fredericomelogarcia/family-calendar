@@ -1,10 +1,18 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo, memo, Suspense, lazy } from "react";
-import { useUser } from "@clerk/nextjs";
+import {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+  memo,
+  Suspense,
+  lazy,
+} from "react";
 import { useRouter } from "next/navigation";
 import { format, isSameDay, startOfDay, endOfDay, addDays } from "date-fns";
-import { Plus, CalendarBlank, Users, ArrowsClockwise } from "@phosphor-icons/react";
+import { Plus, CalendarBlank, ArrowsClockwise } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { EventCard } from "@/components/events/event-card";
@@ -13,12 +21,19 @@ import { isEventOnDay } from "@/lib/calendar-utils";
 import type { EventFormData } from "@/components/events/event-form";
 
 // Lazy load heavy modal components - only loaded when needed
-const EventForm = lazy(() => import("@/components/events/event-form").then(m => ({ default: m.EventForm })));
-const DeleteEventModal = lazy(() => import("@/components/events/delete-event-modal").then(m => ({ default: m.DeleteEventModal })));
+const EventForm = lazy(() =>
+  import("@/components/events/event-form").then((m) => ({
+    default: m.EventForm,
+  })),
+);
+const DeleteEventModal = lazy(() =>
+  import("@/components/events/delete-event-modal").then((m) => ({
+    default: m.DeleteEventModal,
+  })),
+);
 
 const AUTO_REFRESH_STORAGE_KEY = "zawly-dashboard-auto-refresh";
 const AUTO_REFRESH_INTERVAL_MS = 30 * 60 * 1000;
-const AUTO_REFRESH_INTERVAL_SEC = 30 * 60;
 const DAY_ROLLOVER_CHECK_MS = 60 * 1000;
 
 interface Event {
@@ -27,10 +42,13 @@ interface Event {
   startDate: Date;
   endDate?: Date;
   allDay: boolean;
+  startTime?: string;
+  endTime?: string;
   notes?: string;
   recurrence?: string;
-  startTime?: string;
   assignees?: Array<{ id: string; name: string; src?: string | null }>;
+  isHoliday?: boolean;
+  recurrenceEndDate?: Date;
 }
 
 interface FamilyMember {
@@ -49,11 +67,11 @@ function ModalLoading() {
 }
 
 // Memoized empty state component
-const EmptyState = memo(function EmptyState({ 
-  isToday, 
-  onCreate 
-}: { 
-  isToday: boolean; 
+const EmptyState = memo(function EmptyState({
+  isToday,
+  onCreate,
+}: {
+  isToday: boolean;
   onCreate: () => void;
 }) {
   return (
@@ -65,7 +83,7 @@ const EmptyState = memo(function EmptyState({
         No events planned
       </h3>
       <p className="text-sm text-text-secondary text-center mb-4">
-        {isToday 
+        {isToday
           ? "Tap + to add something for today!"
           : "Nothing on this day. Add an event?"}
       </p>
@@ -77,17 +95,21 @@ const EmptyState = memo(function EmptyState({
 });
 
 // Memoized event list component
-const EventList = memo(function EventList({ 
-  events, 
-  onEventClick 
-}: { 
-  events: Event[]; 
+const EventList = memo(function EventList({
+  events,
+  onEventClick,
+}: {
+  events: Event[];
   onEventClick: (event: Event) => void;
 }) {
   return (
     <div className="space-y-3">
       {events.map((event) => (
-        <div key={event.id} className="animate-slide-up" style={{ animationDelay: "0ms" }}>
+        <div
+          key={event.id}
+          className="animate-slide-up"
+          style={{ animationDelay: "0ms" }}
+        >
           <EventCard event={event} onEdit={() => onEventClick(event)} />
         </div>
       ))}
@@ -101,15 +123,16 @@ interface DashboardClientProps {
   hasFamily?: boolean | null;
 }
 
-export default function DashboardClient({ 
-  initialEvents = [], 
-  familyMembers: initialFamilyMembers = [],
-  hasFamily: initialHasFamily = null
+export default function DashboardClient({
+  initialEvents = [],
+  familyMembers: _initialFamilyMembers = [],
+  hasFamily: initialHasFamily = null,
 }: DashboardClientProps) {
-  const { user, isLoaded } = useUser();
   const router = useRouter();
-  
-  const [selectedDate, setSelectedDate] = useState(() => startOfDay(new Date()));
+
+  const [selectedDate, setSelectedDate] = useState(() =>
+    startOfDay(new Date()),
+  );
   const [events, setEvents] = useState<Event[]>(initialEvents);
   const [loading, setLoading] = useState(initialEvents.length === 0);
   const [showEventForm, setShowEventForm] = useState(false);
@@ -120,7 +143,11 @@ export default function DashboardClient({
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
   const [hasFamily, setHasFamily] = useState<boolean | null>(initialHasFamily);
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false);
-  const [countdownSeconds, setCountdownSeconds] = useState(AUTO_REFRESH_INTERVAL_SEC);
+
+  // Extract and store holidays from initial events
+  const holidaysRef = useRef<Event[]>(
+    initialEvents.filter((e) => e.isHoliday) || []
+  );
 
   const syncSelectedDateToToday = useCallback(() => {
     const today = startOfDay(new Date());
@@ -135,33 +162,36 @@ export default function DashboardClient({
     try {
       const stored = localStorage.getItem(AUTO_REFRESH_STORAGE_KEY);
       if (stored !== null) setAutoRefreshEnabled(stored === "true");
-    } catch { /* localStorage unavailable */ }
+    } catch {
+      /* localStorage unavailable */
+    }
   }, []);
 
-  // Fetch events on mount if not provided
+  // Fetch events on mount only if not provided server-side
   useEffect(() => {
-    if (!isLoaded || initialEvents.length > 0) return;
-    if (!user) {
-      router.push("/sign-in");
+    if (initialEvents.length > 0) {
+      setLoading(false);
       return;
     }
     checkFamilyAndFetchEvents();
-  }, [user, isLoaded, initialEvents.length, router]);
+  }, []);
 
-  const fetchEvents = useCallback(async (start?: Date, end?: Date) => {
+const fetchEvents = useCallback(async (start?: Date, end?: Date) => {
     try {
-      const startDate = start || addDays(startOfDay(new Date()), -7);
-      const endDate = end || addDays(endOfDay(new Date()), 30);
-      const res = await fetch(
-        `/api/events?start=${startDate.toISOString()}&end=${endDate.toISOString()}`
-      );
+      // Fetch all events - filtering for display happens client-side
+      const res = await fetch("/api/events");
       const data = await res.json();
-      const parsedEvents = (data.events || []).map((event: Event & { startDate: string }) => ({
-        ...event,
-        startDate: new Date(event.startDate),
-        endDate: event.endDate ? new Date(event.endDate) : undefined,
-      }));
-      setEvents(parsedEvents);
+      const parsedEvents = (data.events || []).map(
+        (event: Event & { startDate: string }) => ({
+          ...event,
+          startDate: new Date(event.startDate),
+          endDate: event.endDate ? new Date(event.endDate) : undefined,
+          recurrenceEndDate: event.recurrenceEndDate ? new Date(event.recurrenceEndDate) : undefined,
+        }),
+      );
+      // Merge holidays with fetched family events
+      const holidays = holidaysRef.current;
+      setEvents([...parsedEvents, ...holidays]);
     } catch (error) {
       console.error("Error fetching events:", error);
     }
@@ -190,12 +220,14 @@ export default function DashboardClient({
     const handlePossibleDayChange = () => {
       if (syncSelectedDateToToday()) {
         fetchEvents();
-        setCountdownSeconds(AUTO_REFRESH_INTERVAL_SEC);
       }
     };
 
     handlePossibleDayChange();
-    const interval = setInterval(handlePossibleDayChange, DAY_ROLLOVER_CHECK_MS);
+    const interval = setInterval(
+      handlePossibleDayChange,
+      DAY_ROLLOVER_CHECK_MS,
+    );
     window.addEventListener("focus", handlePossibleDayChange);
     document.addEventListener("visibilitychange", handlePossibleDayChange);
 
@@ -207,9 +239,9 @@ export default function DashboardClient({
   }, [fetchEvents, syncSelectedDateToToday]);
 
   // Filter today's events - memoized
-  const selectedDateEvents = useMemo(() => 
-    events.filter(event => isEventOnDay(event, selectedDate)),
-    [events, selectedDate]
+  const selectedDateEvents = useMemo(
+    () => events.filter((event) => isEventOnDay(event, selectedDate)),
+    [events, selectedDate],
   );
 
   // Calculate upcoming events - memoized
@@ -218,7 +250,7 @@ export default function DashboardClient({
     const tomorrow = addDays(today, 1);
     const rangeEnd = addDays(today, 30);
     const result: { event: Event; date: Date }[] = [];
-    
+
     for (const event of events) {
       const isRecurring = event.recurrence && event.recurrence !== "none";
       const eventStart = startOfDay(new Date(event.startDate));
@@ -243,90 +275,106 @@ export default function DashboardClient({
   }, [events]);
 
   // Event handlers
-  const handleCreateEvent = useCallback(async (data: EventFormData) => {
-    try {
-      const res = await fetch("/api/events", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (!res.ok) throw new Error("Failed to create event");
-      showToast("success", "Event created successfully!");
-      await fetchEvents();
-      setShowEventForm(false);
-    } catch {
-      showToast("error", "Failed to create event. Please try again.");
-    }
-  }, [fetchEvents]);
+  const handleCreateEvent = useCallback(
+    async (data: EventFormData) => {
+      try {
+        const res = await fetch("/api/events", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        });
+        if (!res.ok) throw new Error("Failed to create event");
+        showToast("success", "Event created successfully!");
+        await fetchEvents();
+        setShowEventForm(false);
+      } catch {
+        showToast("error", "Failed to create event. Please try again.");
+      }
+    },
+    [fetchEvents],
+  );
 
-  const handleEditEvent = useCallback(async (data: EventFormData) => {
-    if (!editingEvent) return;
-    try {
-      const res = await fetch("/api/events", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: editingEvent.id, ...data }),
-      });
-      if (!res.ok) throw new Error("Failed to update event");
-      showToast("success", "Event updated!");
-      await fetchEvents();
-      setEditingEvent(null);
-    } catch {
-      showToast("error", "Failed to update event. Please try again.");
-    }
-  }, [editingEvent, fetchEvents]);
+  const handleEditEvent = useCallback(
+    async (data: EventFormData, options?: { clearExcludedDates?: boolean }) => {
+      if (!editingEvent) return;
+      try {
+        const body: Record<string, unknown> = { id: editingEvent.id, ...data };
+        if (options?.clearExcludedDates) {
+          body.excludedDates = null;
+        }
+        const res = await fetch("/api/events", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        if (!res.ok) throw new Error("Failed to update event");
+        showToast("success", "Event updated!");
+        await fetchEvents();
+        setEditingEvent(null);
+      } catch {
+        showToast("error", "Failed to update event. Please try again.");
+      }
+    },
+    [editingEvent, fetchEvents],
+  );
 
-  const handleDeleteEvent = useCallback(async (deleteAll: boolean) => {
-    if (!deletingEvent) return;
-    setDeleteLoading(true);
-    try {
-      const dateStr = format(selectedDate, "yyyy-MM-dd");
-      let url = `/api/events?id=${deletingEvent.id}&date=${dateStr}`;
-      if (deleteAll) url += "&deleteAll=true";
-      const res = await fetch(url, { method: "DELETE" });
-      if (!res.ok) throw new Error("Failed to delete event");
-      showToast("success", deleteAll ? "Event series deleted" : "Event deleted");
-      await fetchEvents();
-      setDeletingEvent(null);
-    } catch {
-      showToast("error", "Failed to delete event. Please try again.");
-    } finally {
-      setDeleteLoading(false);
-    }
-  }, [deletingEvent, selectedDate, fetchEvents]);
+  const handleDeleteEvent = useCallback(
+    async (deleteAll: boolean) => {
+      if (!deletingEvent) return;
+      setDeleteLoading(true);
+      try {
+        const dateStr = format(selectedDate, "yyyy-MM-dd");
+        let url = `/api/events?id=${deletingEvent.id}&date=${dateStr}`;
+        if (deleteAll) url += "&deleteAll=true";
+        const res = await fetch(url, { method: "DELETE" });
+        if (!res.ok) throw new Error("Failed to delete event");
+        showToast(
+          "success",
+          deleteAll ? "Event series deleted" : "Event deleted",
+        );
+        await fetchEvents();
+        setDeletingEvent(null);
+      } catch {
+        showToast("error", "Failed to delete event. Please try again.");
+      } finally {
+        setDeleteLoading(false);
+      }
+    },
+    [deletingEvent, selectedDate, fetchEvents],
+  );
 
-  const handleEventClick = useCallback((event: Event) => {
+  const handleEventClick = useCallback(
+    (event: Event) => {
+      setEditingEvent(event);
+      setOccurrenceDate(selectedDate);
+    },
+    [selectedDate],
+  );
+
+  const handleUpcomingEventClick = useCallback((event: Event) => {
     setEditingEvent(event);
-    setOccurrenceDate(selectedDate);
-  }, [selectedDate]);
+    setOccurrenceDate(null);
+  }, []);
 
   const toggleAutoRefresh = useCallback((enabled: boolean) => {
     setAutoRefreshEnabled(enabled);
     try {
       localStorage.setItem(AUTO_REFRESH_STORAGE_KEY, String(enabled));
-    } catch { /* localStorage unavailable */ }
-    if (enabled) setCountdownSeconds(AUTO_REFRESH_INTERVAL_SEC);
+    } catch {
+      /* localStorage unavailable */
+    }
   }, []);
 
-  // Auto-refresh countdown
+  // Auto-refresh every 30 minutes
   useEffect(() => {
-    if (!autoRefreshEnabled) {
-      setCountdownSeconds(AUTO_REFRESH_INTERVAL_SEC);
-      return;
-    }
+    if (!autoRefreshEnabled) return;
     const interval = setInterval(() => {
-      setCountdownSeconds(prev => {
-        if (prev <= 1) {
-          fetchEvents();
-          return AUTO_REFRESH_INTERVAL_SEC;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+      fetchEvents();
+    }, AUTO_REFRESH_INTERVAL_MS);
     return () => clearInterval(interval);
   }, [autoRefreshEnabled, fetchEvents]);
 
-  if (!isLoaded || loading) {
+  if (loading) {
     return (
       <div className="min-h-full flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
@@ -349,7 +397,7 @@ export default function DashboardClient({
       <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold font-[family-name:var(--font-heading)] text-text-primary">
-            Good {getGreeting()}, {user?.firstName || "there"} 👋
+            Good {getGreeting()} 👋
           </h1>
           <p className="text-sm text-text-secondary mt-1">
             {format(selectedDate, "EEEE, MMMM d, yyyy")}
@@ -359,22 +407,21 @@ export default function DashboardClient({
           <div className="flex items-center gap-2 px-3 py-2 rounded-[--radius-md] bg-surface border border-border">
             <ArrowsClockwise
               size={16}
-              className={autoRefreshEnabled ? "text-primary animate-spin" : "text-text-tertiary"}
-              style={autoRefreshEnabled ? { animationDuration: '3s' } : undefined}
+              className={
+                autoRefreshEnabled
+                  ? "text-primary animate-spin"
+                  : "text-text-tertiary"
+              }
+              style={
+                autoRefreshEnabled ? { animationDuration: "3s" } : undefined
+              }
             />
             <Checkbox
               id="auto-refresh"
               checked={autoRefreshEnabled}
               onChange={toggleAutoRefresh}
               label={
-                <span className="flex items-center gap-1">
-                  Auto-refresh
-                  {autoRefreshEnabled && (
-                    <span className="text-xs text-text-tertiary font-mono">
-                      {formatCountdown(countdownSeconds)}
-                    </span>
-                  )}
-                </span>
+                <span className="flex items-center gap-1">Auto-refresh</span>
               }
             />
           </div>
@@ -392,19 +439,25 @@ export default function DashboardClient({
       <section className="mb-8" style={{ contain: "layout style" }}>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold font-[family-name:var(--font-heading)] text-text-primary">
-            {isSameDay(selectedDate, new Date()) ? "Today's Events" : format(selectedDate, "EEEE's Events")}
+            {isSameDay(selectedDate, new Date())
+              ? "Today's Events"
+              : format(selectedDate, "EEEE's Events")}
           </h2>
           <span className="text-sm text-text-tertiary">
-            {selectedDateEvents.length} {selectedDateEvents.length === 1 ? "event" : "events"}
+            {selectedDateEvents.length}{" "}
+            {selectedDateEvents.length === 1 ? "event" : "events"}
           </span>
         </div>
 
         {selectedDateEvents.length > 0 ? (
-          <EventList events={selectedDateEvents} onEventClick={handleEventClick} />
+          <EventList
+            events={selectedDateEvents}
+            onEventClick={handleEventClick}
+          />
         ) : (
-          <EmptyState 
-            isToday={isSameDay(selectedDate, new Date())} 
-            onCreate={() => setShowEventForm(true)} 
+          <EmptyState
+            isToday={isSameDay(selectedDate, new Date())}
+            onCreate={() => setShowEventForm(true)}
           />
         )}
       </section>
@@ -417,12 +470,15 @@ export default function DashboardClient({
           </h2>
           <div className="space-y-3">
             {upcomingEvents.map(({ event, date }) => (
-              <div key={`${event.id}-${date.toISOString()}`} className="animate-slide-up">
-                <EventCard 
-                  event={event} 
-                  showDate 
-                  occurrenceDate={date} 
-                  onEdit={() => handleEventClick(event)} 
+              <div
+                key={`${event.id}-${date.toISOString()}`}
+                className="animate-slide-up"
+              >
+                <EventCard
+                  event={event}
+                  showDate
+                  occurrenceDate={date}
+                  onEdit={() => handleUpcomingEventClick(event)}
                 />
               </div>
             ))}
@@ -453,14 +509,19 @@ export default function DashboardClient({
             }}
             initialData={{
               title: editingEvent.title,
-              startDate: occurrenceDate || editingEvent.startDate,
+              startDate: editingEvent.startDate,
               endDate: editingEvent.endDate,
               allDay: editingEvent.allDay,
+              startTime: editingEvent.startTime || undefined,
+              endTime: editingEvent.endTime || undefined,
               notes: editingEvent.notes,
               recurrence: (editingEvent.recurrence as any) || "none",
             }}
             defaultDate={occurrenceDate || editingEvent.startDate}
             mode="edit"
+            disableDate={
+              !!(editingEvent.recurrence && editingEvent.recurrence !== "none")
+            }
           />
         )}
       </Suspense>
@@ -471,7 +532,10 @@ export default function DashboardClient({
             isOpen={!!deletingEvent}
             onClose={() => setDeletingEvent(null)}
             onConfirm={handleDeleteEvent}
-            isRecurring={deletingEvent?.recurrence !== "none" && !!deletingEvent?.recurrence}
+            isRecurring={
+              deletingEvent?.recurrence !== "none" &&
+              !!deletingEvent?.recurrence
+            }
             eventTitle={deletingEvent?.title || ""}
             loading={deleteLoading}
           />
@@ -479,14 +543,6 @@ export default function DashboardClient({
       </Suspense>
     </div>
   );
-}
-
-// Utility functions
-function formatCountdown(seconds: number): string {
-  if (seconds < 60) return `${seconds}s`;
-  const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
-  return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
 function getGreeting() {

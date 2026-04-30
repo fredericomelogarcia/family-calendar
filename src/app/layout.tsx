@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
-import { ClerkProvider } from "@clerk/nextjs";
 import { Nunito, Inter, JetBrains_Mono } from "next/font/google";
+import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 
 const nunito = Nunito({
@@ -65,11 +65,11 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://clerk.zawly.app" />
       </head>
-      <ClerkProvider>
-        <body className="min-h-dvh antialiased">
+      <body className="min-h-dvh antialiased">
+        <ClerkProvider>
           {children}
-        </body>
-      </ClerkProvider>
+        </ClerkProvider>
+      </body>
     </html>
   );
 }

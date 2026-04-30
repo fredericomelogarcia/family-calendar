@@ -1,3 +1,4 @@
+import { ClerkProvider } from "@clerk/nextjs";
 import { ToastContainer } from "@/components/ui/toast";
 import { BottomNav, Sidebar } from "@/components/layout/navigation";
 import { MainContent } from "@/components/layout/main-content";
@@ -10,7 +11,7 @@ export default function ProtectedLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div>
+    <ClerkProvider>
       <SidebarProvider>
         <div className="flex min-h-dvh">
           <Sidebar />
@@ -19,6 +20,6 @@ export default function ProtectedLayout({
         <BottomNav />
       </SidebarProvider>
       <ToastContainer />
-    </div>
+    </ClerkProvider>
   );
 }

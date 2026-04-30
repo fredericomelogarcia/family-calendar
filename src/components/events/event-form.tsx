@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
+import { format, addDays } from "date-fns";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,16 +18,20 @@ export interface EventFormData {
   endTime?: string;
   notes?: string;
   recurrence?: "none" | "daily" | "weekly" | "biweekly" | "triweekly" | "quadweekly" | "monthly" | "yearly";
+  /** For recurring events - end date for the recurrence (e.g., daily until date) */
+  recurrenceEndDate?: Date;
 }
 
 interface EventFormProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (data: EventFormData) => Promise<void>;
+  onSave: (data: EventFormData, options?: { clearExcludedDates?: boolean }) => Promise<void>;
   onDelete?: () => void;
   initialData?: Partial<EventFormData>;
   defaultDate?: Date;
   mode?: "create" | "edit";
+  /** Disable date editing for recurring events in edit mode */
+  disableDate?: boolean;
 }
 
 export function EventForm({
@@ -38,24 +42,32 @@ export function EventForm({
   initialData,
   defaultDate = new Date(),
   mode = "create",
+  disableDate = false,
 }: EventFormProps) {
   const [title, setTitle] = useState(initialData?.title || "");
   const [startDate, setStartDate] = useState(initialData?.startDate || defaultDate);
+  const [recurrenceEndDate, setRecurrenceEndDate] = useState<Date | undefined>(initialData?.recurrenceEndDate);
   const [allDay, setAllDay] = useState(initialData?.allDay ?? true);
   const [startTime, setStartTime] = useState(initialData?.startTime || "09:00");
+  const [endTime, setEndTime] = useState(initialData?.endTime || "10:00");
   const [notes, setNotes] = useState(initialData?.notes || "");
   const [recurrence, setRecurrence] = useState<EventFormData["recurrence"]>(initialData?.recurrence || "none");
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  const isEditingRecurring = mode === "edit" && initialData?.recurrence && initialData.recurrence !== "none";
+  const showRangeEnd = recurrence === "daily";
+
   useEffect(() => {
-    if (isOpen && mode === "create") {
-      setStartDate(defaultDate);
-      setTitle("");
-      setAllDay(true);
-      setStartTime("09:00");
-      setNotes("");
-      setRecurrence("none");
+    if (isOpen) {
+      setTitle(initialData?.title || "");
+      setStartDate(initialData?.startDate || defaultDate);
+      setRecurrenceEndDate(initialData?.recurrenceEndDate);
+      setAllDay(initialData?.allDay ?? true);
+      setStartTime(initialData?.startTime || "09:00");
+      setEndTime(initialData?.endTime || "10:00");
+      setNotes(initialData?.notes || "");
+      setRecurrence(initialData?.recurrence || "none");
       setErrors({});
     }
   }, [isOpen, defaultDate, mode]);
@@ -72,14 +84,21 @@ export function EventForm({
 
     setLoading(true);
     try {
-      await onSave({
-        title: title.trim(),
-        startDate,
-        allDay,
-        startTime: allDay ? undefined : startTime,
-        notes: notes.trim() || undefined,
-        recurrence,
-      });
+      const clearExcludedDates = isEditingRecurring && recurrence === "none";
+      // If daily with recurrenceEndDate, save as daily with end date
+      await onSave(
+        {
+          title: title.trim(),
+          startDate,
+          allDay,
+          startTime: allDay ? undefined : startTime,
+          endTime: allDay ? undefined : endTime,
+          notes: notes.trim() || undefined,
+          recurrence,
+          recurrenceEndDate: recurrenceEndDate || undefined,
+        },
+        { clearExcludedDates }
+      );
       onClose();
     } catch (error) {
       console.error("Failed to save event:", error);
@@ -89,7 +108,7 @@ export function EventForm({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={mode === "create" ? "New Event" : "Edit Event"}>
+    <Modal isOpen={isOpen} onClose={onClose} title={mode === "create" ? "New Event" : "Edit Event"} size="xl">
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* Header Inputs */}
         <div className="space-y-6">
@@ -110,9 +129,15 @@ export function EventForm({
                   type="date"
                   value={format(startDate, "yyyy-MM-dd")}
                   onChange={(e) => setStartDate(new Date(e.target.value))}
-                  className="w-full min-w-0 h-11 sm:h-12 pl-10 pr-3 rounded-[--radius-sm] border border-border bg-surface text-text-primary text-base focus:outline-none focus:ring-2 focus:ring-primary"
+                  disabled={disableDate || isEditingRecurring}
+                  className="w-full min-w-0 h-11 sm:h-12 pl-10 pr-3 rounded-[--radius-sm] border border-border bg-surface text-text-primary text-base focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
                 />
               </div>
+              {isEditingRecurring && (
+                <p className="text-xs text-text-tertiary">
+                  Recurrence is based on the original start date
+                </p>
+              )}
             </div>
 
             <div className="space-y-1.5 min-w-0">
@@ -129,14 +154,25 @@ export function EventForm({
                 </Button>
               </div>
               {!allDay ? (
-                <div className="relative">
-                  <Clock className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" size={18} />
-                  <input
-                    type="time"
-                    value={startTime}
-                    onChange={(e) => setStartTime(e.target.value)}
-                    className="w-full min-w-0 h-11 sm:h-12 pl-10 pr-3 rounded-[--radius-sm] border border-border bg-surface text-text-primary text-base focus:outline-none focus:ring-2 focus:ring-primary"
-                  />
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="relative">
+                    <Clock className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" size={18} />
+                    <input
+                      type="time"
+                      value={startTime}
+                      onChange={(e) => setStartTime(e.target.value)}
+                      className="w-full h-11 sm:h-12 pl-10 pr-3 rounded-[--radius-sm] border border-border bg-surface text-text-primary text-base focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                  </div>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary text-base">to</span>
+                    <input
+                      type="time"
+                      value={endTime}
+                      onChange={(e) => setEndTime(e.target.value)}
+                      className="w-full h-11 sm:h-12 pl-8 pr-3 rounded-[--radius-sm] border border-border bg-surface text-text-primary text-base focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                  </div>
                 </div>
               ) : (
                 <div className="h-11 sm:h-12 flex items-center px-3 text-sm text-text-tertiary bg-surface-alt rounded-[--radius-sm] border border-border border-dashed">
@@ -177,6 +213,24 @@ export function EventForm({
             ))}
           </div>
         </div>
+
+        {/* Range End Date - shown for daily recurrence */}
+        {showRangeEnd && (
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-text-primary">Until</label>
+            <div className="relative">
+              <CalendarBlank className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" size={18} />
+              <input
+                type="date"
+                value={recurrenceEndDate ? format(recurrenceEndDate, "yyyy-MM-dd") : ""}
+                onChange={(e) => setRecurrenceEndDate(e.target.value ? new Date(e.target.value) : undefined)}
+                min={format(startDate, "yyyy-MM-dd")}
+                className="w-full h-11 sm:h-12 pl-10 pr-3 rounded-[--radius-sm] border border-border bg-surface text-text-primary text-base focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+            <p className="text-xs text-text-tertiary">Repeats daily until this date</p>
+          </div>
+        )}
 
         <div className="space-y-1.5">
           <label className="block text-sm font-medium text-text-primary">Notes</label>

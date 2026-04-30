@@ -216,6 +216,33 @@ h1, h2, h3, h4, h5, h6 {
   animation: fade-in 300ms ease-out;
 }
 
+@keyframes fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+.animate-fade-out {
+  animation: fade-out 150ms ease-out;
+}
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes scale-out {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: scale(0.95); }
+}
+
+.animate-scale-in {
+  animation: scale-in 150ms ease-out;
+}
+
+.animate-scale-out {
+  animation: scale-out 150ms ease-out;
+}
+
 .animate-slide-up {
   animation: slide-up 300ms ease-out;
 }
@@ -257,6 +284,71 @@ input[type="datetime-local"] {
 input[type="date"]::-webkit-date-and-time-value,
 input[type="time"]::-webkit-date-and-time-value {
   text-align: left;
+}
+
+/* Modal transitions (replaces framer-motion) */
+.modal-overlay {
+  opacity: 0;
+}
+.modal-overlay.modal-overlay-enter {
+  animation: modal-fade-in 150ms ease forwards;
+}
+.modal-overlay.modal-overlay-exit {
+  animation: modal-fade-out 150ms ease forwards;
+}
+
+.modal-content {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.95) translateY(20px);
+}
+.modal-content.modal-content-enter {
+  animation: modal-slide-in 150ms ease forwards;
+}
+.modal-content.modal-content-exit {
+  animation: modal-slide-out 150ms ease forwards;
+}
+
+@keyframes modal-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modal-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes modal-slide-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.95) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1) translateY(0);
+  }
+}
+
+@keyframes modal-slide-out {
+  from {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.95) translateY(20px);
+  }
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 /* Remove inner padding/spacing iOS adds */

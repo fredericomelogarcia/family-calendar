@@ -28,12 +28,13 @@ interface MonthGridProps {
     endDate?: Date;
     allDay?: boolean;
     notes?: string;
+    isHoliday?: boolean;
   }>;
 }
 
 interface DayCellProps {
   day: Date;
-  dayEvents: Array<{ id: string }>;
+  dayEvents: Array<{ id: string; isHoliday?: boolean }>;
   isCurrentMonth: boolean;
   isSelected: boolean;
   isDayToday: boolean;
@@ -50,6 +51,7 @@ const DayCell = memo(function DayCell({
   onSelectDate,
 }: DayCellProps) {
   const hasEvents = dayEvents.length > 0;
+  const hasHoliday = dayEvents.some(e => e.isHoliday);
 
   return (
     <button
@@ -72,10 +74,13 @@ const DayCell = memo(function DayCell({
         {format(day, "d")}
       </span>
       
-      {/* Event indicator dot - always reserve space so number stays aligned */}
-      <div className="h-1.5 mt-1 flex items-center justify-center">
-        {hasEvents && (
+      {/* Event indicators */}
+      <div className="h-1.5 mt-1 flex items-center justify-center gap-1">
+        {hasEvents && !hasHoliday && (
           <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+        )}
+        {hasHoliday && (
+          <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
         )}
       </div>
     </button>
@@ -96,7 +101,7 @@ export const MonthGrid = memo(function MonthGrid({ currentMonth, selectedDate, o
   
   const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-  // Memoize events lookup to prevent recalculation on every render
+  // Memoize events lookup - includes both regular events and holidays
   const eventsByDay = useMemo(() => {
     return days.reduce((acc, day) => {
       acc[toDateKey(day)] = events.filter(event => 
@@ -120,17 +125,18 @@ export const MonthGrid = memo(function MonthGrid({ currentMonth, selectedDate, o
         ))}
       </div>
 
-      {/* Calendar grid - Use CSS animation instead of JS */}
+      {/* Calendar grid */}
       <div 
         className="grid grid-cols-7 gap-1 animate-fade-in"
         style={{ contain: "layout style paint" }}
       >
         {days.map((day) => {
-          const dayEvents = eventsByDay[toDateKey(day)] || [];
+          const dayKey = toDateKey(day);
+          const dayEvents = eventsByDay[dayKey] || [];
           
           return (
             <DayCell
-              key={toDateKey(day)}
+              key={dayKey}
               day={day}
               dayEvents={dayEvents}
               isCurrentMonth={isSameMonth(day, currentMonth)}

@@ -19,6 +19,7 @@ interface DayViewProps {
     notes?: string;
     recurrence?: string;
     excludedDates?: string[];
+    isHoliday?: boolean;
   }>;
   onCreateEvent: () => void;
   onEventClick?: (event: any) => void;

@@ -14,22 +14,57 @@ import {
   PencilSimple,
   Lock,
   Crown,
-  Heart,
   UserMinus,
-  ArrowRight,
   Warning,
   Envelope,
   X,
   PaperPlaneRight,
   Clock,
   ArrowClockwise,
+  User,
+  Users,
+  Heart,
+  Globe,
 } from "@phosphor-icons/react";
+
+const COUNTRIES = [
+  { code: "GB", name: "United Kingdom" },
+  { code: "US", name: "United States" },
+  { code: "CA", name: "Canada" },
+  { code: "AU", name: "Australia" },
+  { code: "DE", name: "Germany" },
+  { code: "FR", name: "France" },
+  { code: "ES", name: "Spain" },
+  { code: "IT", name: "Italy" },
+  { code: "NL", name: "Netherlands" },
+  { code: "BE", name: "Belgium" },
+  { code: "AT", name: "Austria" },
+  { code: "CH", name: "Switzerland" },
+  { code: "IE", name: "Ireland" },
+  { code: "PT", name: "Portugal" },
+  { code: "SE", name: "Sweden" },
+  { code: "NO", name: "Norway" },
+  { code: "DK", name: "Denmark" },
+  { code: "FI", name: "Finland" },
+  { code: "PL", name: "Poland" },
+  { code: "BR", name: "Brazil" },
+  { code: "MX", name: "Mexico" },
+  { code: "JP", name: "Japan" },
+  { code: "KR", name: "South Korea" },
+  { code: "IN", name: "India" },
+  { code: "SG", name: "Singapore" },
+  { code: "NZ", name: "New Zealand" },
+  { code: "ZA", name: "South Africa" },
+  { code: "AE", name: "United Arab Emirates" },
+];
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar } from "@/components/ui/avatar";
 import { Modal } from "@/components/ui/modal";
 import { showToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
+import { CustomPricingTable } from "@/components/support/pricing-table";
+import { ContactFormButton } from "@/components/support/contact-form-button";
 
 const MAX_FAMILY_MEMBERS = 6;
 
@@ -67,19 +102,28 @@ interface Family {
   id: string;
   name: string;
   inviteCode: string;
+  country: string;
 }
 
 export default function SettingsPage() {
   const { user, isLoaded } = useUser();
   const { signOut } = useAuth();
-  const { signIn } = useSignIn();
   const router = useRouter();
 
   const [loading, setLoading] = useState(true);
   const [family, setFamily] = useState<Family | null>(null);
+  const [country, setCountry] = useState("GB");
+  const [countryLoading, setCountryLoading] = useState(false);
   const [members, setMembers] = useState<FamilyMember[]>([]);
   const [currentUserRole, setCurrentUserRole] = useState<string>("member");
   const [copied, setCopied] = useState(false);
+  const [activeTab, setActiveTab] = useState<"profile" | "family" | "support">("profile");
+
+  const tabs = [
+    { id: "profile" as const, label: "Profile", icon: User },
+    { id: "family" as const, label: "Family", icon: Users },
+    { id: "support" as const, label: "Support", icon: Heart },
+  ];
 
   // Modal states
   const [showEditNameModal, setShowEditNameModal] = useState(false);
@@ -197,6 +241,7 @@ export default function SettingsPage() {
         setMembers(data.members || []);
         setCurrentUserRole(data.currentUserRole);
         setNewFamilyName(data.family?.name || "");
+        setCountry(data.family?.country || "US");
         setHasFamily(true);
         setInvitations(invitesData.invitations || []);
       } else {
@@ -355,6 +400,30 @@ export default function SettingsPage() {
       showToast("error", "Failed to update family name");
     } finally {
       setFamilyNameLoading(false);
+    }
+  };
+
+  const updateCountry = async (newCountry: string) => {
+    if (newCountry === country) return;
+    
+    setCountryLoading(true);
+    try {
+      const res = await fetch("/api/family", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ country: newCountry }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setFamily(data.family);
+        setCountry(newCountry);
+        showToast("success", "Country updated!");
+      }
+    } catch (error) {
+      showToast("error", "Failed to update country");
+    } finally {
+      setCountryLoading(false);
     }
   };
 
@@ -612,321 +681,254 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-full p-4 md:p-6 lg:p-8 max-w-2xl">
-      <h1 className="text-2xl font-bold font-[family-name:var(--font-heading)] text-text-primary mb-6">
+    <div className="min-h-full p-4 md:p-6 lg:p-8 max-w-5xl mx-auto">
+      <h1 className="text-2xl font-bold font-[family-name:var(--font-heading)] text-text-primary mb-6 hidden lg:block">
         Settings
       </h1>
 
-      {/* Profile Section */}
-      <section className="mb-8">
-        <h2 className="text-sm font-semibold text-text-secondary uppercase tracking-wide mb-3">
-          Profile
-        </h2>
-        <div className="bg-surface rounded-[--radius-md] border border-border overflow-hidden">
-          {/* Name Row */}
-          <div className="p-4 border-b border-border flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Avatar name={user?.fullName || "User"} src={user?.imageUrl} size="lg" />
-              <div>
-                <h3 className="font-semibold text-text-primary">
-                  {user?.fullName || "User"}
-                </h3>
-                <p className="text-sm text-text-secondary">
-                  {user?.emailAddresses?.[0]?.emailAddress || "No email"}
-                </p>
-              </div>
-            </div>
+      {/* Tab Navigation - Desktop */}
+      <div className="hidden lg:flex items-center gap-1 mb-6 p-1 bg-surface-alt rounded-[--radius-lg]">
+        {tabs.map((tab) => {
+          const Icon = tab.icon;
+          return (
             <button
-              onClick={() => {
-                setNewFirstName(user?.firstName || "");
-                setNewLastName(user?.lastName || "");
-                setShowEditNameModal(true);
-              }}
-              className="p-2 text-text-secondary hover:text-text-primary transition-colors"
-              aria-label="Edit your name"
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={cn(
+                "flex items-center gap-2 px-4 py-2.5 rounded-[--radius-md] text-sm font-medium transition-all",
+                activeTab === tab.id
+                  ? "bg-surface shadow-sm text-text-primary"
+                  : "text-text-secondary hover:text-text-primary"
+              )}
             >
-              <PencilSimple size={20} />
+              <Icon size={18} />
+              {tab.label}
             </button>
-          </div>
+          );
+        })}
+      </div>
 
-          {/* Email Row (read-only) */}
-          <div className="p-4 border-b border-border flex items-center justify-between">
-            <div>
-              <p className="text-sm text-text-secondary">Email</p>
-              <p className="font-medium text-text-primary">
-                {user?.emailAddresses?.[0]?.emailAddress || "No email"}
-              </p>
-            </div>
-          </div>
-
-          {/* Change Password Row */}
-          <button
-            onClick={openChangePasswordModal}
-            className="w-full p-4 border-b border-border flex items-center justify-between hover:bg-surface-alt/50 transition-colors text-left"
-          >
-            <div className="flex items-center gap-3">
-              <Lock size={20} className="text-text-secondary" />
-              <span className="font-medium text-text-primary">Change Password</span>
-            </div>
-            <ArrowRight size={18} className="text-text-tertiary" />
-          </button>
-
-          {/* Manage Subscription Row */}
-          <button
-            onClick={() => router.push("/support")}
-            className="w-full p-4 flex items-center justify-between hover:bg-surface-alt/50 transition-colors text-left"
-          >
-            <div className="flex items-center gap-3">
-              <Heart size={20} className="text-text-secondary" />
-              <span className="font-medium text-text-primary">Manage Subscription</span>
-            </div>
-            <ArrowRight size={18} className="text-text-tertiary" />
-          </button>
-        </div>
-      </section>
-
-      {/* Family Section */}
-      <section className="mb-8">
-        <h2 className="text-sm font-semibold text-text-secondary uppercase tracking-wide mb-3">
-          Family
-        </h2>
-        <div className="bg-surface rounded-[--radius-md] border border-border overflow-hidden">
-          {/* Family Name */}
-          <div className="p-4 border-b border-border flex items-center justify-between">
-            <div>
-              <h3 className="font-medium text-text-primary">{family?.name}</h3>
-              <p className="text-sm text-text-secondary">Family name</p>
-            </div>
-            {currentUserRole === "admin" && (
+      {/* Tab Navigation - Mobile */}
+      <div className="lg:hidden mb-6">
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            return (
               <button
-                onClick={() => setShowEditFamilyNameModal(true)}
-                className="p-2 text-text-secondary hover:text-text-primary transition-colors"
-                aria-label="Edit family name"
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={cn(
+                  "flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium whitespace-nowrap transition-all",
+                  activeTab === tab.id
+                    ? "bg-surface text-text-primary border border-border shadow-sm"
+                    : "text-text-secondary bg-surface-alt"
+                )}
               >
-                <PencilSimple size={20} />
+                <Icon size={18} />
+                {tab.label}
               </button>
-            )}
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Tab Content */}
+      <div className="animate-fade-in">
+        {/* PROFILE TAB */}
+        {activeTab === "profile" && (
+          <div className="space-y-6">
+            <section>
+              <div className="bg-surface rounded-[--radius-md] border border-border overflow-hidden">
+                <div className="p-4 border-b border-border flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <Avatar name={user?.fullName || "User"} src={user?.imageUrl} size="lg" />
+                    <div>
+                      <h3 className="font-semibold text-text-primary">{user?.fullName || "User"}</h3>
+                      <p className="text-sm text-text-secondary">{user?.emailAddresses?.[0]?.emailAddress || "No email"}</p>
+                    </div>
+                  </div>
+                  <button onClick={() => { setNewFirstName(user?.firstName || ""); setNewLastName(user?.lastName || ""); setShowEditNameModal(true); }} className="p-2 text-text-secondary hover:text-text-primary transition-colors" aria-label="Edit your name">
+                    <PencilSimple size={20} />
+                  </button>
+                </div>
+                <div className="p-4 border-b border-border">
+                  <p className="text-sm text-text-secondary">Email</p>
+                  <p className="font-medium text-text-primary">{user?.emailAddresses?.[0]?.emailAddress || "No email"}</p>
+                </div>
+                <button onClick={openChangePasswordModal} className="w-full p-4 flex items-center justify-between hover:bg-surface-alt/50 transition-colors text-left">
+                  <div className="flex items-center gap-3">
+                    <Lock size={20} className="text-text-secondary" />
+                    <span className="font-medium text-text-primary">Change Password</span>
+                  </div>
+                </button>
+              </div>
+            </section>
+
+            <section>
+              <Button variant="ghost" onClick={handleSignOut} leftIcon={<SignOut size={18} />} className="w-full justify-start text-text-secondary hover:text-text-primary">
+                Sign Out
+              </Button>
+            </section>
+
+            <section className="pt-4 border-t border-border">
+              <h2 className="text-sm font-semibold text-error-dark uppercase tracking-wide mb-3">Danger Zone</h2>
+              <div className="bg-surface rounded-[--radius-md] border border-border overflow-hidden">
+                <button onClick={() => { setDeleteConfirmText(""); setShowDeleteAccountModal(true); }} className="w-full p-4 flex items-center justify-between hover:bg-error/5 transition-colors text-left">
+                  <div className="flex items-center gap-3">
+                    <Warning size={20} className="text-error-dark" />
+                    <div>
+                      <span className="font-medium text-error-dark">Delete Account</span>
+                      <p className="text-xs text-text-tertiary">Permanently delete your account and all data</p>
+                    </div>
+                  </div>
+                </button>
+              </div>
+            </section>
           </div>
+        )}
 
-          {/* Invite Code */}
-          {currentUserRole === "admin" && members.length < MAX_FAMILY_MEMBERS && (
-            <div className="p-4 border-b border-border">
-              <p className="text-sm text-text-secondary mb-2">Invite Code</p>
-              <div className="flex items-center gap-2">
-                <div className="flex-1 px-4 py-3 bg-surface-alt rounded-[--radius-sm] font-mono text-lg tracking-wider text-text-primary">
-                  {family?.inviteCode}
-                </div>
-                <button
-                  onClick={copyInviteCode}
-                  className="p-3 rounded-[--radius-sm] bg-surface-alt hover:bg-border transition-colors"
-                  aria-label="Copy invite code to clipboard"
-                >
-                  {copied ? (
-                    <Check size={20} className="text-success" />
-                  ) : (
-                    <Copy size={20} className="text-text-secondary" />
-                  )}
-                </button>
-                <button
-                  onClick={regenerateInviteCode}
-                  className="p-3 rounded-[--radius-sm] bg-surface-alt hover:bg-border transition-colors"
-                  aria-label="Generate new invite code"
-                  title="Generate new code"
-                >
-                  <Trash size={20} className="text-text-secondary" />
-                </button>
-              </div>
-              <p className="text-xs text-text-tertiary mt-2">
-                Share this code with family members to invite them
-              </p>
-            </div>
-          )}
-
-          {/* Invite by Email */}
-          {currentUserRole === "admin" && members.length + invitations.length < MAX_FAMILY_MEMBERS && (
-            <div className="p-4 border-b border-border">
-              <p className="text-sm text-text-secondary mb-2">Invite by Email</p>
-              <div className="flex items-center gap-2">
-                <div className="flex-1 relative">
-                  <Envelope 
-                    size={18} 
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" 
-                  />
-                  <input
-                    type="email"
-                    value={inviteEmail}
-                    onChange={(e) => setInviteEmail(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && sendInvitation()}
-                    placeholder="family member's email"
-                    className="w-full h-11 pl-10 pr-4 rounded-[--radius-sm] border border-border bg-surface text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm"
-                    disabled={inviteLoading}
-                  />
-                </div>
-                <button
-                  onClick={sendInvitation}
-                  disabled={inviteLoading || !inviteEmail.trim()}
-                  className="h-11 px-4 rounded-[--radius-sm] bg-primary text-white hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
-                  aria-label="Send invitation"
-                >
-                  {inviteLoading ? (
-                    <div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
-                  ) : (
-                    <PaperPlaneRight size={18} />
-                  )}
-                  <span className="hidden sm:inline text-sm font-medium">Invite</span>
-                </button>
-              </div>
-              <p className="text-xs text-text-tertiary mt-2">
-                They'll receive a link to join your family
-              </p>
-            </div>
-          )}
-
-          {/* Pending Invitations */}
-          {currentUserRole === "admin" && invitations.length > 0 && (
-            <div className="p-4 border-b border-border">
-              <p className="text-sm text-text-secondary mb-3">
-                Pending Invitations ({invitations.length})
-              </p>
-              <div className="space-y-2">
-                {invitations.map((invitation) => (
-                  <div 
-                    key={invitation.id} 
-                    className="flex items-center gap-3 p-3 rounded-[--radius-sm] bg-surface-alt/50 border border-border"
-                  >
-                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Envelope size={16} className="text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-text-primary text-sm truncate">
-                        {invitation.email}
-                      </p>
-                      <div className="flex items-center gap-2 text-xs text-text-tertiary">
-                        <Clock size={12} />
-                        <span>Sent {new Date(invitation.createdAt).toLocaleDateString()}</span>
-                        <span className="text-warning">• Pending</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => resendInvitation(invitation.id, invitation.email)}
-                        className="p-2 text-text-tertiary hover:text-primary transition-colors"
-                        aria-label="Resend invitation"
-                        title="Resend invitation"
-                      >
-                        <ArrowClockwise size={18} />
-                      </button>
-                      <button
-                        onClick={() => cancelInvitation(invitation.id, invitation.email)}
-                        className="p-2 text-text-tertiary hover:text-error-dark transition-colors"
-                        aria-label="Cancel invitation"
-                        title="Cancel invitation"
-                      >
-                        <X size={18} />
-                      </button>
-                    </div>
+        {/* FAMILY TAB */}
+        {activeTab === "family" && (
+          <div className="space-y-6">
+            <section>
+              <div className="bg-surface rounded-[--radius-md] border border-border overflow-hidden">
+                <div className="p-4 border-b border-border flex items-center justify-between">
+                  <div>
+                    <h3 className="font-medium text-text-primary">{family?.name}</h3>
+                    <p className="text-sm text-text-secondary">Family name</p>
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Members */}
-          <div className="p-4 border-b border-border">
-            <p className="text-sm text-text-secondary mb-3">Members ({members.length}/{MAX_FAMILY_MEMBERS})</p>
-            <div className="space-y-3">
-              {members.map((member) => (
-                <div key={member.id} className="flex items-center gap-3">
-                  <Avatar name={member.name} src={member.avatar} size="md" />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className="font-medium text-text-primary">{member.name}</p>
-                      {member.role === "admin" && (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-primary-dark bg-primary/15 px-1.5 py-0.5 rounded-[--radius-sm]">
-                          <Crown size={10} weight="fill" />
-                          Admin
-                        </span>
-                      )}
-                      {member.id === user?.id && (
-                        <span className="text-[10px] font-semibold uppercase tracking-wider text-text-tertiary bg-surface-alt px-1.5 py-0.5 rounded-[--radius-sm]">
-                          You
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-text-tertiary">{member.email}</p>
-                  </div>
-                  {/* Remove member button (admin only, can't remove self) */}
-                  {currentUserRole === "admin" && member.id !== user?.id && (
-                    <button
-                      onClick={() => {
-                        setMemberToRemove(member);
-                        setShowRemoveMemberModal(true);
-                      }}
-                      className="p-2 text-text-tertiary hover:text-error-dark-dark transition-colors"
-                      aria-label="Remove member"
-                      title="Remove member"
-                    >
-                      <UserMinus size={18} />
+                  {currentUserRole === "admin" && (
+                    <button onClick={() => setShowEditFamilyNameModal(true)} className="p-2 text-text-secondary hover:text-text-primary transition-colors" aria-label="Edit family name">
+                      <PencilSimple size={20} />
                     </button>
                   )}
                 </div>
-              ))}
-            </div>
-          </div>
 
-          {/* Leave Family */}
-          <div className="p-4">
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setSelectedNewAdmin("");
-                setShowLeaveModal(true);
-              }}
-              className="w-full justify-start text-error-dark hover:text-error-dark hover:bg-error/10"
-              leftIcon={<SignOut size={18} />}
-            >
-              Leave Family
-            </Button>
-          </div>
-        </div>
-      </section>
+                {/* Country */}
+                <div className="p-4 border-b border-border">
+                  <div className="flex items-center gap-3 mb-2">
+                    <Globe size={18} className="text-text-tertiary" />
+                    <p className="text-sm text-text-secondary">Country</p>
+                  </div>
+                  <select
+                    value={country}
+                    onChange={(e) => updateCountry(e.target.value)}
+                    disabled={countryLoading || currentUserRole !== "admin"}
+                    className="w-full h-10 px-3 rounded-[--radius-sm] border border-border bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
+                  >
+                    {COUNTRIES.map((c) => (
+                      <option key={c.code} value={c.code}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-      {/* Sign Out */}
-      <section>
-        <Button
-          variant="ghost"
-          onClick={handleSignOut}
-          leftIcon={<SignOut size={18} />}
-          className="w-full justify-start text-text-secondary hover:text-text-primary"
-        >
-          Sign Out
-        </Button>
-      </section>
+                {/* Invite Code */}
+                {currentUserRole === "admin" && members.length < MAX_FAMILY_MEMBERS && (
+                  <div className="p-4 border-b border-border">
+                    <p className="text-sm text-text-secondary mb-2">Invite Code</p>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 px-4 py-3 bg-surface-alt rounded-[--radius-sm] font-mono text-lg tracking-wider text-text-primary">{family?.inviteCode}</div>
+                      <button onClick={copyInviteCode} className="p-3 rounded-[--radius-sm] bg-surface-alt hover:bg-border transition-colors" aria-label="Copy invite code">
+                        {copied ? <Check size={20} className="text-success" /> : <Copy size={20} className="text-text-secondary" />}
+                      </button>
+                      <button onClick={regenerateInviteCode} className="p-3 rounded-[--radius-sm] bg-surface-alt hover:bg-border transition-colors" aria-label="Generate new invite code">
+                        <Trash size={20} className="text-text-secondary" />
+                      </button>
+                    </div>
+                  </div>
+                )}
 
-      {/* Danger Zone */}
-      <section className="mt-8 pt-8 border-t border-border">
-        <h2 className="text-sm font-semibold text-error-dark uppercase tracking-wide mb-3">
-          Danger Zone
-        </h2>
-        <div className="bg-surface rounded-[--radius-md] border border-border overflow-hidden">
-          <button
-            onClick={() => {
-              setDeleteConfirmText("");
-              setShowDeleteAccountModal(true);
-            }}
-            className="w-full p-4 flex items-center justify-between hover:bg-error/5 transition-colors text-left"
-          >
-            <div className="flex items-center gap-3">
-              <Warning size={20} className="text-error-dark" />
-              <div>
-                <span className="font-medium text-error-dark">Delete Account</span>
-                <p className="text-xs text-text-tertiary">Permanently delete your account and all data</p>
+                {/* Invite by Email */}
+                {currentUserRole === "admin" && members.length + invitations.length < MAX_FAMILY_MEMBERS && (
+                  <div className="p-4 border-b border-border">
+                    <p className="text-sm text-text-secondary mb-2">Invite by Email</p>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 relative">
+                        <Envelope size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" />
+                        <input type="email" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} onKeyDown={(e) => e.key === "Enter" && sendInvitation()} placeholder="family member's email" className="w-full h-11 pl-10 pr-4 rounded-[--radius-sm] border border-border bg-surface text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-primary text-sm" disabled={inviteLoading} />
+                      </div>
+                      <button onClick={sendInvitation} disabled={inviteLoading || !inviteEmail.trim()} className="h-11 px-4 rounded-[--radius-sm] bg-primary text-white hover:bg-primary-dark disabled:opacity-50 transition-colors flex items-center gap-2">
+                        {inviteLoading ? <div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" /> : <PaperPlaneRight size={18} />}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Pending Invitations */}
+                {currentUserRole === "admin" && invitations.length > 0 && (
+                  <div className="p-4 border-b border-border">
+                    <p className="text-sm text-text-secondary mb-3">Pending Invitations ({invitations.length})</p>
+                    <div className="space-y-2">
+                      {invitations.map((invitation) => (
+                        <div key={invitation.id} className="flex items-center gap-3 p-3 rounded-[--radius-sm] bg-surface-alt/50 border border-border">
+                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center"><Envelope size={16} className="text-primary" /></div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-text-primary text-sm truncate">{invitation.email}</p>
+                            <div className="flex items-center gap-2 text-xs text-text-tertiary">
+                              <Clock size={12} /><span>Sent {new Date(invitation.createdAt).toLocaleDateString()}</span><span className="text-warning">• Pending</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <button onClick={() => resendInvitation(invitation.id, invitation.email)} className="p-2 text-text-tertiary hover:text-primary transition-colors" aria-label="Resend invitation"><ArrowClockwise size={18} /></button>
+                            <button onClick={() => cancelInvitation(invitation.id, invitation.email)} className="p-2 text-text-tertiary hover:text-error-dark transition-colors" aria-label="Cancel invitation"><X size={18} /></button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Members */}
+                <div className="p-4 border-b border-border">
+                  <p className="text-sm text-text-secondary mb-3">Members ({members.length}/{MAX_FAMILY_MEMBERS})</p>
+                  <div className="space-y-3">
+                    {members.map((member) => (
+                      <div key={member.id} className="flex items-center gap-3">
+                        <Avatar name={member.name} src={member.avatar} size="md" />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium text-text-primary">{member.name}</p>
+                            {member.role === "admin" && <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-primary-dark bg-primary/15 px-1.5 py-0.5 rounded-[--radius-sm]"><Crown size={10} weight="fill" />Admin</span>}
+                            {member.id === user?.id && <span className="text-[10px] font-semibold uppercase tracking-wider text-text-tertiary bg-surface-alt px-1.5 py-0.5 rounded-[--radius-sm]">You</span>}
+                          </div>
+                          <p className="text-xs text-text-tertiary">{member.email}</p>
+                        </div>
+                        {currentUserRole === "admin" && member.id !== user?.id && (
+                          <button onClick={() => { setMemberToRemove(member); setShowRemoveMemberModal(true); }} className="p-2 text-text-tertiary hover:text-error-dark transition-colors" aria-label="Remove member"><UserMinus size={18} /></button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Leave Family */}
+                <div className="p-4">
+                  <Button variant="ghost" onClick={() => { setSelectedNewAdmin(""); setShowLeaveModal(true); }} className="w-full justify-start text-error-dark hover:text-error-dark hover:bg-error/10" leftIcon={<SignOut size={18} />}>Leave Family</Button>
+                </div>
               </div>
-            </div>
-            <ArrowRight size={18} className="text-text-tertiary" />
-          </button>
-        </div>
-      </section>
+            </section>
+          </div>
+        )}
+
+        {/* SUPPORT TAB */}
+        {activeTab === "support" && (
+          <div className="space-y-6">
+            <section>
+              <div className="bg-surface rounded-[--radius-md] border border-border p-6 md:p-8 space-y-6">
+                <div className="text-center space-y-2">
+                  <h3 className="text-xl font-bold text-text-primary font-[family-name:var(--font-heading)]">Support Zawly Calendar</h3>
+                  <p className="text-text-secondary">Zawly Calendar is and will always be free for everyone. If you find it helpful and want to support the continuous development, you can do so below.</p>
+                </div>
+                <div className="flex justify-center"><CustomPricingTable /></div>
+                <p className="text-xs text-text-tertiary text-center">The support plan is completely optional and does not unlock extra features, but it is greatly appreciated!</p>
+                <ContactFormButton />
+              </div>
+            </section>
+          </div>
+        )}
+      </div>
 
       {/* Edit Name Modal */}
       <Modal

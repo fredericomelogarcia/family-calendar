@@ -48,8 +48,9 @@ export async function GET(request: NextRequest) {
     const conditions = [eq(events.familyId, user.familyId)];
 
     if (start && end) {
-      // For display: fetch all events that could appear in this time range
-      // This includes events starting on or before the range end
+      // Fetch events that could appear in this time range
+      // - Non-recurring: starts within range
+      // - Recurring: started before rangeEnd (could still be active)
       const rangeEnd = endOfDay(parseISO(end));
       conditions.push(lte(events.startDate, rangeEnd));
     } else if (start) {
@@ -88,7 +89,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { title, startDate, endDate, allDay, notes } = body;
+    const { title, startDate, endDate, allDay, startTime, endTime, notes, recurrence, recurrenceEndDate } = body;
 
     if (!title || title.length < 2) {
       return NextResponse.json({ error: "Title must be at least 2 characters" }, { status: 400 });
@@ -105,6 +106,9 @@ export async function POST(request: NextRequest) {
       startDate: new Date(startDate),
       endDate: endDate ? new Date(endDate) : null,
       allDay: allDay ?? true,
+      startTime: body.startTime || null,
+      endTime: body.endTime || null,
+      recurrenceEndDate: recurrenceEndDate ? new Date(recurrenceEndDate) : null,
       notes: notes || null,
       recurrence: body.recurrence || "none",
       createdBy: userId,
@@ -129,7 +133,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { id, title, startDate, endDate, allDay, notes } = body;
+    const { id, title, startDate, endDate, allDay, startTime, endTime, notes, recurrence, recurrenceEndDate } = body;
 
     if (!id) {
       return NextResponse.json({ error: "Event ID required" }, { status: 400 });
@@ -144,8 +148,11 @@ export async function PATCH(request: NextRequest) {
     if (startDate !== undefined) updates.startDate = new Date(startDate);
     if (endDate !== undefined) updates.endDate = endDate ? new Date(endDate) : null;
     if (allDay !== undefined) updates.allDay = allDay;
+    if (startTime !== undefined) updates.startTime = startTime || null;
+    if (endTime !== undefined) updates.endTime = endTime || null;
     if (notes !== undefined) updates.notes = notes || null;
-    if (body.recurrence !== undefined) updates.recurrence = body.recurrence;
+    if (recurrence !== undefined) updates.recurrence = recurrence;
+if (recurrenceEndDate !== undefined) updates.recurrenceEndDate = recurrenceEndDate ? new Date(recurrenceEndDate) : null;
     if (body.excludedDates !== undefined) updates.excludedDates = body.excludedDates;
 
     const user = await db.query.users.findFirst({

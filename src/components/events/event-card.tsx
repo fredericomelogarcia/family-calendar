@@ -13,7 +13,10 @@ interface EventCardProps {
     startDate: Date | string;
     endDate?: Date | string | null;
     allDay?: boolean;
+    startTime?: string | null;
+    endTime?: string | null;
     notes?: string | null;
+    isHoliday?: boolean;
   };
   showDate?: boolean;
   /** The actual occurrence date to display (differs from event.startDate for recurring events) */
@@ -32,6 +35,15 @@ export const EventCard = memo(function EventCard({
   const startDate = new Date(event.startDate);
   const displayDate = occurrenceDate || startDate;
   const isAllDay = event.allDay ?? true;
+  const isHoliday = event.isHoliday ?? false;
+  const hasStartTime = event.startTime && !isAllDay;
+  const hasEndTime = event.endTime && !isAllDay;
+
+  const timeDisplay = isAllDay 
+    ? "All day" 
+    : hasEndTime 
+      ? `${event.startTime} - ${event.endTime}`
+      : format(startDate, "h:mm a");
 
   return (
     <div
@@ -41,12 +53,13 @@ export const EventCard = memo(function EventCard({
       }}
       className={cn(
         "w-full p-4 rounded-[--radius-md] bg-surface border border-border",
-        "flex gap-4 items-center"
+        "flex gap-4 items-center",
+        isHoliday && "border-blue-300 bg-blue-50/50"
       )}
     >
       {/* Content - takes available space */}
       <div className="flex-1 min-w-0">
-        <h3 className="font-semibold text-text-primary truncate">
+        <h3 className={cn("font-semibold truncate", isHoliday ? "text-blue-700" : "text-text-primary")}>
           {event.title}
         </h3>
         
@@ -56,10 +69,7 @@ export const EventCard = memo(function EventCard({
             isAllDay ? "text-text-secondary" : "text-text-tertiary"
           )}>
             {showDate && format(displayDate, "EEEE, MMMM d") + " · "}
-            {isAllDay 
-              ? "All day" 
-              : format(startDate, "h:mm a")
-            }
+            {timeDisplay}
           </span>
           
           {event.notes && (
@@ -70,8 +80,8 @@ export const EventCard = memo(function EventCard({
         </div>
       </div>
 
-      {/* Edit Button on the right */}
-      {onEdit && (
+      {/* Edit Button on the right - hide for holidays */}
+      {onEdit && !isHoliday && (
         <Button
           variant="ghost"
           size="sm"

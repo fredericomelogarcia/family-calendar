@@ -10,7 +10,8 @@ import {
   X, 
   Envelope,
   Check,
-  Spinner
+  Spinner,
+  Globe,
 } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +19,37 @@ import { Modal } from "@/components/ui/modal";
 import { showToast } from "@/components/ui/toast";
 
 const MAX_FAMILY_MEMBERS = 6;
+
+const COUNTRIES = [
+  { code: "US", name: "United States" },
+  { code: "GB", name: "United Kingdom" },
+  { code: "CA", name: "Canada" },
+  { code: "AU", name: "Australia" },
+  { code: "DE", name: "Germany" },
+  { code: "FR", name: "France" },
+  { code: "ES", name: "Spain" },
+  { code: "IT", name: "Italy" },
+  { code: "NL", name: "Netherlands" },
+  { code: "BE", name: "Belgium" },
+  { code: "AT", name: "Austria" },
+  { code: "CH", name: "Switzerland" },
+  { code: "IE", name: "Ireland" },
+  { code: "PT", name: "Portugal" },
+  { code: "SE", name: "Sweden" },
+  { code: "NO", name: "Norway" },
+  { code: "DK", name: "Denmark" },
+  { code: "FI", name: "Finland" },
+  { code: "PL", name: "Poland" },
+  { code: "BR", name: "Brazil" },
+  { code: "MX", name: "Mexico" },
+  { code: "JP", name: "Japan" },
+  { code: "KR", name: "South Korea" },
+  { code: "IN", name: "India" },
+  { code: "SG", name: "Singapore" },
+  { code: "NZ", name: "New Zealand" },
+  { code: "ZA", name: "South Africa" },
+  { code: "AE", name: "United Arab Emirates" },
+];
 
 interface PendingInvite {
   email: string;
@@ -30,6 +62,7 @@ export default function OnboardingPage() {
 
   const [step, setStep] = useState<"welcome" | "create" | "join">("welcome");
   const [familyName, setFamilyName] = useState("");
+  const [country, setCountry] = useState("GB");
   const [inviteCode, setInviteCode] = useState("");
   const [loading, setLoading] = useState(false);
   
@@ -72,6 +105,7 @@ export default function OnboardingPage() {
         body: JSON.stringify({ 
           action: "create", 
           familyName: familyName.trim(),
+          country: country,
           inviteEmails: invites.filter(e => e.includes("@")),
         }),
       });
@@ -230,6 +264,29 @@ export default function OnboardingPage() {
                   placeholder="The Smith Family"
                   onKeyDown={(e) => e.key === "Enter" && handleCreateFamily()}
                 />
+
+                <div>
+                  <label className="block text-sm font-medium text-text-primary mb-1.5">
+                    Country (for holidays)
+                  </label>
+                  <div className="relative">
+                    <Globe size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none" />
+                    <select
+                      value={country}
+                      onChange={(e) => setCountry(e.target.value)}
+                      className="w-full h-12 pl-10 pr-4 rounded-[--radius-sm] border border-border bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary appearance-none cursor-pointer"
+                    >
+                      {COUNTRIES.map((c) => (
+                        <option key={c.code} value={c.code}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <p className="text-xs text-text-tertiary mt-1">
+                    Shows your country's bank holidays on the calendar
+                  </p>
+                </div>
 
                 {/* Email Invitations */}
                 <div className="pt-4">
