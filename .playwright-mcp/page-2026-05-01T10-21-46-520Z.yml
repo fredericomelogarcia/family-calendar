@@ -1,0 +1,22 @@
+- generic [active] [ref=e1]:
+  - main [ref=e3]
+  - navigation [ref=e6]:
+    - generic [ref=e7]:
+      - link "Home" [ref=e8] [cursor=pointer]:
+        - /url: /dashboard
+        - img [ref=e9]
+      - link "Calendar" [ref=e11] [cursor=pointer]:
+        - /url: /calendar
+        - img [ref=e12]
+      - link "Add" [ref=e15] [cursor=pointer]:
+        - /url: /events/new
+        - img [ref=e16]
+      - link "Budget" [ref=e18] [cursor=pointer]:
+        - /url: /expenses
+        - img [ref=e19]
+      - link "Settings" [ref=e21] [cursor=pointer]:
+        - /url: /settings
+        - img [ref=e22]
+  - button "Open Next.js Dev Tools" [ref=e29] [cursor=pointer]:
+    - img [ref=e30]
+  - alert [ref=e33]

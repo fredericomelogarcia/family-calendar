@@ -1,0 +1,25 @@
+[     198ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/0.rz_%40sentry_core_build_esm_0p-_0hj._.js:10515
+[     219ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/0.rz_%40sentry_core_build_esm_0p-_0hj._.js:10515
+[     437ms] [WARNING] Clerk: Clerk has been loaded with development keys. Development instances have strict usage limits and should not be used when deploying your application to production. Learn more: https://clerk.com/docs/deployments/overview @ http://localhost:3000/_next/static/chunks/0.rz_%40sentry_core_build_esm_0p-_0hj._.js:10515
+[     441ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/0.rz_%40sentry_core_build_esm_0p-_0hj._.js:10515
+[     469ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/api/categories:0
+[     478ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/api/income:0
+[     479ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/api/expenses:0
+[     479ms] [ERROR] Error fetching budget data: Error: Failed to load budget data
+    at ExpensesClient.useCallback[fetchData] (http://localhost:3000/_next/static/chunks/src_119o4pv._.js:325:27) @ http://localhost:3000/_next/static/chunks/0.rz_%40sentry_core_build_esm_0p-_0hj._.js:10515
+[     505ms] [LOG] [Fast Refresh] done in 164ms @ http://localhost:3000/_next/static/chunks/0.rz_%40sentry_core_build_esm_0p-_0hj._.js:10515
+[    8288ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=41NfD1PxjKU1l1mInCcQb' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/07.t_next_dist_client_0dvff-3._.js:14499
+[    9325ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/0.rz_%40sentry_core_build_esm_0p-_0hj._.js:10515
+[   10094ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/0.rz_%40sentry_core_build_esm_0p-_0hj._.js:10515
+[   10122ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/0.rz_%40sentry_core_build_esm_0p-_0hj._.js:10515
+[   10232ms] [WARNING] Clerk: Clerk has been loaded with development keys. Development instances have strict usage limits and should not be used when deploying your application to production. Learn more: https://clerk.com/docs/deployments/overview @ http://localhost:3000/_next/static/chunks/0.rz_%40sentry_core_build_esm_0p-_0hj._.js:10515
+[   10381ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/0.rz_%40sentry_core_build_esm_0p-_0hj._.js:10515
+[   10401ms] [LOG] [Fast Refresh] done in 121ms @ http://localhost:3000/_next/static/chunks/0.rz_%40sentry_core_build_esm_0p-_0hj._.js:10515
+[   10492ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/api/categories:0
+[   10540ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/api/income:0
+[   10541ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:3000/api/expenses:0
+[   10541ms] [ERROR] Error fetching budget data: Error: Failed to load budget data
+    at ExpensesClient.useCallback[fetchData] (http://localhost:3000/_next/static/chunks/src_119o4pv._.js:325:27) @ http://localhost:3000/_next/static/chunks/0.rz_%40sentry_core_build_esm_0p-_0hj._.js:10515
+[   97229ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=IaxsNVI1Tl263E1B0n-qw' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/07.t_next_dist_client_0dvff-3._.js:14499
+[   98231ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=IaxsNVI1Tl263E1B0n-qw' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/07.t_next_dist_client_0dvff-3._.js:14499
+[   99232ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=IaxsNVI1Tl263E1B0n-qw' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/07.t_next_dist_client_0dvff-3._.js:14499

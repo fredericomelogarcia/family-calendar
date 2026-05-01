@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { format } from "date-fns";
 import Link from "next/link";
 import {
@@ -48,6 +48,7 @@ interface Expense {
 type Period = "one-time" | "weekly" | "monthly" | "yearly";
 type LedgerFilter = "all" | "income" | "expense";
 type TransactionKind = "income" | "expense";
+type MonthPickerView = "month" | "year" | null;
 
 type TransactionDraft = {
   kind: TransactionKind;
@@ -65,6 +66,23 @@ const PERIOD_OPTIONS: { value: Period; label: string }[] = [
   { value: "monthly", label: "Monthly" },
   { value: "yearly", label: "Yearly" },
 ];
+
+const MONTH_OPTIONS = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+] as const;
+
+const CURRENCY_FORMATTER = new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" });
 
 const emptyDraft = (): TransactionDraft => ({
   kind: "expense",
@@ -117,6 +135,16 @@ function shiftMonth(month: string, offset: number) {
   return format(date, "yyyy-MM");
 }
 
+function setMonthPart(month: string, nextMonthIndex: number) {
+  const [year] = month.split("-").map(Number);
+  return format(new Date(year, nextMonthIndex, 1), "yyyy-MM");
+}
+
+function setYearPart(month: string, nextYear: number) {
+  const [, monthNumber] = month.split("-").map(Number);
+  return format(new Date(nextYear, monthNumber - 1, 1), "yyyy-MM");
+}
+
 export default function ExpensesClient() {
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -129,6 +157,16 @@ export default function ExpensesClient() {
 
   const [showTransactionForm, setShowTransactionForm] = useState(false);
   const [transactionDraft, setTransactionDraft] = useState<TransactionDraft>(emptyDraft);
+  const monthPickerRef = useRef<HTMLDivElement>(null);
+  const [monthPickerView, setMonthPickerView] = useState<MonthPickerView>(null);
+  const [selectedYear, selectedMonthNumber] = selectedMonth.split("-").map(Number);
+
+  const yearOptions = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    const startYear = Math.min(selectedYear, currentYear) - 5;
+    const endYear = Math.max(selectedYear, currentYear) + 5;
+    return Array.from({ length: endYear - startYear + 1 }, (_, index) => startYear + index);
+  }, [selectedYear]);
 
   const fetchData = useCallback(async () => {
     try {
@@ -160,6 +198,18 @@ export default function ExpensesClient() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  useEffect(() => {
+    if (!monthPickerView) return;
+
+    const closeMonthPicker = (event: PointerEvent) => {
+      if (monthPickerRef.current?.contains(event.target as Node)) return;
+      setMonthPickerView(null);
+    };
+
+    document.addEventListener("pointerdown", closeMonthPicker);
+    return () => document.removeEventListener("pointerdown", closeMonthPicker);
+  }, [monthPickerView]);
 
   const categoryMap = useMemo(() => {
     return new Map(categories.map((category) => [category.id, category]));
@@ -227,7 +277,7 @@ export default function ExpensesClient() {
   }, [categoryFilter, categoryMap, expenses, income, ledgerFilter, search, selectedMonth]);
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" }).format(amount);
+    return CURRENCY_FORMATTER.format(amount);
   };
 
   const openCreateTransaction = (kind: TransactionKind = "expense") => {
@@ -343,20 +393,93 @@ export default function ExpensesClient() {
           <p className="text-sm text-text-secondary mt-1">Simple household money tracking: income, spending, categories, and what is left.</p>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="flex items-center rounded-xl border border-border bg-surface overflow-hidden">
-            <button onClick={() => setSelectedMonth(shiftMonth(selectedMonth, -1))} className="p-3 hover:bg-surface-alt" aria-label="Previous month">
-              <ArrowLeft size={18} />
-            </button>
-            <input
-              type="month"
-              value={selectedMonth}
-              onChange={(event) => setSelectedMonth(event.target.value)}
-              className="h-11 bg-transparent px-2 text-sm font-semibold outline-none"
-              aria-label="Budget month"
-            />
-            <button onClick={() => setSelectedMonth(shiftMonth(selectedMonth, 1))} className="p-3 hover:bg-surface-alt" aria-label="Next month">
-              <ArrowRight size={18} />
-            </button>
+          <div ref={monthPickerRef} className="relative w-full sm:w-auto">
+            <div className="grid w-full grid-cols-[44px_minmax(0,1fr)_44px] items-center rounded-xl border border-border bg-surface overflow-hidden">
+              <button
+                onClick={() => {
+                  setSelectedMonth(shiftMonth(selectedMonth, -1));
+                  setMonthPickerView(null);
+                }}
+                className="flex h-11 items-center justify-center hover:bg-surface-alt"
+                aria-label="Previous month"
+              >
+                <ArrowLeft size={18} />
+              </button>
+              <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_5rem] border-l border-border">
+                <button
+                  type="button"
+                  onClick={() => setMonthPickerView((view) => (view === "month" ? null : "month"))}
+                  className="h-11 min-w-0 truncate bg-transparent px-3 text-left text-sm font-semibold outline-none hover:bg-surface-alt"
+                  aria-expanded={monthPickerView === "month"}
+                >
+                  {MONTH_OPTIONS[selectedMonthNumber - 1]}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMonthPickerView((view) => (view === "year" ? null : "year"))}
+                  className="h-11 min-w-0 border-l border-border bg-transparent px-3 text-left text-sm font-semibold outline-none hover:bg-surface-alt"
+                  aria-expanded={monthPickerView === "year"}
+                >
+                  {selectedYear}
+                </button>
+              </div>
+              <button
+                onClick={() => {
+                  setSelectedMonth(shiftMonth(selectedMonth, 1));
+                  setMonthPickerView(null);
+                }}
+                className="flex h-11 items-center justify-center border-l border-border hover:bg-surface-alt"
+                aria-label="Next month"
+              >
+                <ArrowRight size={18} />
+              </button>
+            </div>
+
+            {monthPickerView && (
+              <div className="absolute left-0 right-0 top-12 z-30 rounded-xl border border-border bg-surface p-2 shadow-lg">
+                {monthPickerView === "month" ? (
+                  <div className="grid grid-cols-2 gap-1">
+                    {MONTH_OPTIONS.map((month, index) => (
+                      <button
+                        key={month}
+                        type="button"
+                        onClick={() => {
+                          setSelectedMonth(setMonthPart(selectedMonth, index));
+                          setMonthPickerView(null);
+                        }}
+                        className={
+                          index === selectedMonthNumber - 1
+                            ? "rounded-[--radius-sm] bg-primary px-3 py-2 text-left text-sm font-semibold text-white"
+                            : "rounded-[--radius-sm] px-3 py-2 text-left text-sm font-medium hover:bg-surface-alt"
+                        }
+                      >
+                        {month}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-3 gap-1">
+                    {yearOptions.map((year) => (
+                      <button
+                        key={year}
+                        type="button"
+                        onClick={() => {
+                          setSelectedMonth(setYearPart(selectedMonth, year));
+                          setMonthPickerView(null);
+                        }}
+                        className={
+                          year === selectedYear
+                            ? "rounded-[--radius-sm] bg-primary px-3 py-2 text-center text-sm font-semibold text-white"
+                            : "rounded-[--radius-sm] px-3 py-2 text-center text-sm font-medium hover:bg-surface-alt"
+                        }
+                      >
+                        {year}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
           <Link
             href="/settings"
