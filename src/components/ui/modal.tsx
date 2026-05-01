@@ -35,6 +35,7 @@ export function Modal({
   const [isVisible, setIsVisible] = useState(false);
   const [isAnimatingOut, setIsAnimatingOut] = useState(false);
   const onCloseRef = useRef(onClose);
+  const openCountRef = useRef(0);
 
   useEffect(() => {
     onCloseRef.current = onClose;
@@ -45,21 +46,51 @@ export function Modal({
       setIsVisible(true);
       setIsAnimatingOut(false);
       document.body.style.overflow = "hidden";
+      openCountRef.current += 1;
     } else if (!isOpen && isVisible && !isAnimatingOut) {
       setIsAnimatingOut(true);
-      document.body.style.overflow = "";
+      openCountRef.current -= 1;
+      // Only restore scroll if no other modals are open
+      if (openCountRef.current <= 0) {
+        document.body.style.overflow = "";
+        openCountRef.current = 0;
+      }
       setTimeout(() => {
         setIsVisible(false);
         setIsAnimatingOut(false);
         onCloseRef.current();
       }, 150);
+    } else if (isOpen && isAnimatingOut) {
+      // Re-opening while animating out — cancel the close
+      setIsAnimatingOut(false);
+      openCountRef.current += 1;
+      if (openCountRef.current > 0) {
+        document.body.style.overflow = "hidden";
+      }
     }
   }, [isOpen, isVisible, isAnimatingOut]);
+
+  // Cleanup on unmount — always restore scroll
+  useEffect(() => {
+    return () => {
+      if (isVisible && !isAnimatingOut) {
+        openCountRef.current -= 1;
+        if (openCountRef.current <= 0) {
+          document.body.style.overflow = "";
+          openCountRef.current = 0;
+        }
+      }
+    };
+  }, [isVisible, isAnimatingOut]);
 
   const handleClose = useCallback(() => {
     if (isVisible && !isAnimatingOut) {
       setIsAnimatingOut(true);
-      document.body.style.overflow = "";
+      openCountRef.current -= 1;
+      if (openCountRef.current <= 0) {
+        document.body.style.overflow = "";
+        openCountRef.current = 0;
+      }
       setTimeout(() => {
         setIsVisible(false);
         setIsAnimatingOut(false);

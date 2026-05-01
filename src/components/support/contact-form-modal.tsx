@@ -46,6 +46,7 @@ export function ContactFormModal({ isOpen, onClose }: ContactFormModalProps) {
   });
 
   const handleClose = () => {
+    // Call the onClose prop directly - the Modal component handles scroll restoration
     onClose();
     // Delay reset so modal close animation plays first
     setTimeout(() => {
