@@ -25,8 +25,12 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Zawly",
-  description: "A warm, mobile-first family workspace for calendars and household expenses.",
+  title: {
+    default: "Zawly",
+    template: "%s | Zawly",
+  },
+  description:
+    "A warm, mobile-first family workspace for calendars and household expenses.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -39,6 +43,24 @@ export const metadata: Metadata = {
   other: {
     "msapplication-TileColor": "#7C9A7E",
   },
+  authors: [{ name: "Zawly" }],
+  creator: "Zawly",
+  metadataBase: new URL("https://zawly.app"),
+  twitter: {
+    card: "summary_large_image",
+    site: "@zawlyapp",
+    creator: "@zawlyapp",
+  },
+  openGraph: {
+    type: "website",
+    locale: "en_GB",
+    url: "https://zawly.app",
+    siteName: "Zawly",
+    title: "Zawly",
+    description:
+      "A warm, mobile-first family workspace for calendars and household expenses.",
+    images: [{ url: "/icons/icon-512.png", width: 512, height: 512, alt: "Zawly" }],
+  },
 };
 
 export const viewport: Viewport = {
@@ -47,6 +69,40 @@ export const viewport: Viewport = {
   maximumScale: 5,
   userScalable: true,
   themeColor: "#7C9A7E",
+};
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://zawly.app/#organization",
+      name: "Zawly",
+      url: "https://zawly.app",
+      logo: {
+        "@type": "ImageObject",
+        url: "https://zawly.app/icons/icon-512.png",
+        width: 512,
+        height: 512,
+      },
+      sameAs: ["https://twitter.com/zawlyapp"],
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://zawly.app/#website",
+      url: "https://zawly.app",
+      name: "Zawly",
+      description: "A warm, mobile-first family workspace for calendars and household expenses.",
+      publisher: { "@id": "https://zawly.app/#organization" },
+      potentialAction: [
+        {
+          "@type": "SearchAction",
+          target: "https://zawly.app/search?q={search_term_string}",
+          "query-input": "required name=search_term_string",
+        },
+      ],
+    },
+  ],
 };
 
 // Root layout with ClerkProvider - wraps entire app
@@ -64,6 +120,10 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://clerk.zawly.app" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
       </head>
       <body className="min-h-dvh antialiased">
         <ClerkProvider>

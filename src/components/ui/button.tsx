@@ -21,18 +21,18 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           "inline-flex items-center justify-center gap-2 font-semibold rounded-[--radius-lg] transition-all duration-150 ease-out",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
           "disabled:opacity-50 disabled:cursor-not-allowed",
-          
+
           // Variants
           variant === "primary" && "bg-primary text-white hover:bg-primary-dark active:scale-[0.98]",
           variant === "secondary" && "bg-surface border border-border text-text-primary hover:bg-surface-alt active:scale-[0.98]",
           variant === "ghost" && "bg-transparent text-text-secondary hover:bg-surface-alt hover:text-text-primary",
           variant === "danger" && "bg-error text-white hover:bg-[#c06b5c] active:scale-[0.98]",
-          
+
           // Sizes
           size === "sm" && "px-3 py-1.5 text-sm",
           size === "md" && "px-4 py-2.5 text-sm",
           size === "lg" && "px-6 py-3 text-base",
-          
+
           className
         )}
         {...props}

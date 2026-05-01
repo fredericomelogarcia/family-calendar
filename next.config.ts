@@ -2,7 +2,27 @@ import { withSentryConfig } from "@sentry/nextjs";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Core Web Vitals optimizations
+  compress: true,
+  poweredByHeader: false,
+
+  // Image optimization for faster LCP
+  images: {
+    formats: ["image/avif", "image/webp"],
+    minimumCacheTTL: 60 * 60 * 24 * 30, // 30 days
+    remotePatterns: [
+      { protocol: "https", hostname: "**.clerk.**" },
+    ],
+  },
+
+  // MDX support
+  pageExtensions: ["ts", "tsx", "js", "jsx", "md", "mdx"],
+
+  // Experimental optimizations for 2026
+  experimental: {
+    // Optimize CSS delivery
+    optimizeCss: true,
+  },
 };
 
 export default withSentryConfig(nextConfig, {
@@ -23,7 +43,6 @@ export default withSentryConfig(nextConfig, {
   widenClientFileUpload: true,
 
   // Uncomment to route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
-  // This can increase your server load as well as your hosting bill.
   // Note: Check that the configured route will not match with your Next.js middleware, otherwise reporting of client-
   // side errors will fail.
   // tunnelRoute: "/monitoring",
@@ -40,5 +59,5 @@ export default withSentryConfig(nextConfig, {
       // Automatically tree-shake Sentry logger statements to reduce bundle size
       removeDebugLogging: true,
     },
-  }
+  },
 });

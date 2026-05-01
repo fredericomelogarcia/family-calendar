@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: "/",
       disallow: "/api/",
     },
-    sitemap: "https://zawly.com/sitemap.xml",
+    sitemap: "https://zawly.app/sitemap.xml",
   };
 }
