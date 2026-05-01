@@ -1,8 +1,8 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "Terms & Conditions — Zawly Calendar",
-  description: "Terms and conditions for using Zawly Calendar, the free family calendar app.",
+  title: "Terms & Conditions — Zawly",
+  description: "Terms and conditions for using Zawly, the free family calendar and household expenses app.",
 };
 
 export default function TermsPage() {
@@ -13,38 +13,43 @@ export default function TermsPage() {
           Terms &amp; Conditions
         </h1>
         <p className="text-sm text-text-tertiary mb-10">
-          Last updated: June 2025
+          Last updated: April 2026
         </p>
 
         <div className="space-y-8 text-text-secondary leading-relaxed">
           <section>
             <h2 className="text-lg font-bold text-text-primary mb-3">1. Acceptance of Terms</h2>
             <p>
-              By accessing or using Zawly Calendar (&quot;the Service&quot;), you agree to be bound by these Terms and Conditions.
+              By accessing or using Zawly (&quot;the Service&quot;), you agree to be bound by these Terms and Conditions.
               If you do not agree with any part of these terms, you may not use the Service. These terms apply to
-              all visitors, users, and others who access Zawly Calendar.
+              all visitors, users, and others who access Zawly.
             </p>
           </section>
 
           <section>
             <h2 className="text-lg font-bold text-text-primary mb-3">2. Description of Service</h2>
             <p>
-              Zawly Calendar is a free, mobile-first shared calendar application designed for families to coordinate
-              schedules, events, and appointments. The Service allows you to create a family group, invite
-              members via a shareable invite code, and manage shared calendar events including recurring
-              events, and assignments.
+              Zawly is a free, mobile-first family organization application designed for families to coordinate
+              schedules, events, appointments, and household expenses. The Service allows you to create a family
+              group, invite members via a shareable invite code, manage shared calendar events including recurring
+              events, and track income, expenses, and simple expense categories.
             </p>
             <p className="mt-3">
-              Zawly Calendar is provided free of charge. We offer an optional support plan that allows users to
+              Zawly is provided free of charge. We offer an optional support plan that allows users to
               contribute financially, but it does not unlock additional features or change the terms
               described here.
+            </p>
+            <p className="mt-3">
+              Expense and budget features are provided for household organization only. Zawly is not a bank,
+              accountant, financial adviser, or tax adviser, and information shown in the Service should not
+              be treated as financial, legal, or tax advice.
             </p>
           </section>
 
           <section>
             <h2 className="text-lg font-bold text-text-primary mb-3">3. Account Registration</h2>
             <p>
-              To use Zawly Calendar, you must create an account through our authentication provider. You are responsible
+              To use Zawly, you must create an account through our authentication provider. You are responsible
               for maintaining the confidentiality of your login credentials and for all activities that occur
               under your account. You must be at least 13 years old to create an account.
             </p>
@@ -60,21 +65,23 @@ export default function TermsPage() {
               When you create a family, you become its administrator. As an admin, you can rename the family
               and regenerate its invite code. Invite codes are designed to be shared with people you trust —
               your family members. Anyone with a valid invite code can join your family group and access
-              all shared calendar events.
+              shared calendar events and shared household expense information.
             </p>
             <p className="mt-3">
               Each family group supports up to 6 members. If you need additional capacity, please contact us.
               You may leave a family group at any time from the Settings page. Leaving removes your access
-              to the shared calendar. If you are the admin, you must transfer ownership before leaving.
+              to the shared calendar and shared expense workspace. If you are the admin, you must transfer
+              ownership before leaving.
             </p>
           </section>
 
           <section>
             <h2 className="text-lg font-bold text-text-primary mb-3">5. Your Content</h2>
             <p>
-              You retain ownership of the events, notes, and other content you create in Zawly Calendar. By adding
-              content to a shared family calendar, you grant other family members the ability to view and,
-              where applicable, edit that content within the context of the family group.
+              You retain ownership of the events, notes, income entries, expense entries, categories,
+              and other content you create in Zawly. By adding content to a shared family workspace,
+              you grant other family members the ability to view and, where applicable, edit that content
+              within the context of the family group.
             </p>
             <p className="mt-3">
               You are responsible for ensuring that the content you add does not violate any applicable laws
@@ -85,12 +92,12 @@ export default function TermsPage() {
 
           <section>
             <h2 className="text-lg font-bold text-text-primary mb-3">6. Acceptable Use</h2>
-            <p>You agree not to use Zawly Calendar to:</p>
+            <p>You agree not to use Zawly to:</p>
             <ul className="list-disc list-inside mt-2 space-y-1">
               <li>Share content that is unlawful, harmful, threatening, or harassing</li>
               <li>Impersonate another person or misrepresent your affiliation</li>
-              <li>Attempt to gain unauthorized access to another user's account</li>
-              <li>Interfere with or disrupt the Service's infrastructure</li>
+              <li>Attempt to gain unauthorized access to another user&apos;s account</li>
+              <li>Interfere with or disrupt the Service&apos;s infrastructure</li>
               <li>Use the Service for any automated or commercial purpose without permission</li>
               <li>Reverse engineer, decompile, or otherwise attempt to extract the source code</li>
             </ul>
@@ -99,7 +106,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-lg font-bold text-text-primary mb-3">7. Availability &amp; Modifications</h2>
             <p>
-              Zawly Calendar is provided &quot;as is&quot; and &quot;as available.&quot; We do not guarantee uninterrupted access, and
+              Zawly is provided &quot;as is&quot; and &quot;as available.&quot; We do not guarantee uninterrupted access, and
               we may modify, suspend, or discontinue the Service at any time. We will make reasonable efforts
               to notify users of significant changes.
             </p>
@@ -113,10 +120,10 @@ export default function TermsPage() {
           <section>
             <h2 className="text-lg font-bold text-text-primary mb-3">8. Limitation of Liability</h2>
             <p>
-              To the maximum extent permitted by law, Zawly Calendar and its creators shall not be liable for any
+              To the maximum extent permitted by law, Zawly and its creators shall not be liable for any
               indirect, incidental, special, consequential, or punitive damages arising from your use of
-              the Service, including but not limited to loss of data, missed appointments, or any other
-              damages resulting from service interruptions or data loss.
+              the Service, including but not limited to loss of data, missed appointments, household budgeting
+              decisions, or any other damages resulting from service interruptions or data loss.
             </p>
           </section>
 
@@ -136,7 +143,8 @@ export default function TermsPage() {
             <p>
               You may delete your account at any time through your account settings or by contacting us.
               Upon deletion, your personal data will be removed in accordance with our Privacy Policy.
-              Events you created within a family group may remain visible to other members of that group.
+              Events, income entries, expense entries, and categories you created within a
+              family group may remain visible to other members of that group.
             </p>
             <p className="mt-3">
               We reserve the right to suspend or terminate accounts that violate these Terms, with or
@@ -157,7 +165,7 @@ export default function TermsPage() {
 
         <div className="mt-12 pt-8 border-t border-border">
           <Link href="/" className="text-primary hover:underline text-sm">
-            ← Back to Zawly Calendar
+            ← Back to Zawly
           </Link>
         </div>
       </article>

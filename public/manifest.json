@@ -1,7 +1,7 @@
 {
-  "name": "Zawly Calendar",
+  "name": "Zawly",
   "short_name": "Zawly",
-  "description": "A warm, mobile-first family calendar that keeps your household in sync.",
+  "description": "A warm, mobile-first family workspace for calendars and household expenses.",
   "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#FAF9F7",

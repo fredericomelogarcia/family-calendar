@@ -1,6 +1,6 @@
-# 📅 Zawly Family Calendar
+# Zawly
 
-Zawly is a modern, collaborative family calendar application designed to help families synchronize their schedules effortlessly. It provides a shared space where family members can coordinate events, manage recurring appointments, and keep everyone in the loop.
+Zawly is a modern, collaborative family workspace designed to help families coordinate schedules and household expenses. It provides a shared space where family members can manage recurring appointments, keep everyone in the loop, and understand the monthly spending plan.
 
 ## ✨ Features
 
@@ -17,6 +17,12 @@ Zawly is a modern, collaborative family calendar application designed to help fa
   - Delete a single occurrence of a recurring event without affecting the series.
   - Delete an event and all its future occurrences.
 - **Intuitive Interface:** A responsive layout featuring a month-grid overview and a detailed day-view.
+
+### Household Expenses
+- **Income & Expenses:** Track recurring income and household costs in one shared place.
+- **Category Targets:** Set monthly targets for groceries, bills, transport, childcare, savings, and more.
+- **Monthly Totals:** See income, spending, and what is left this month.
+- **Search & Filters:** Quickly find expenses by description, amount, or category.
 
 ### 🔐 Security & Performance
 - **Authentication:** Robust user management and secure sessions via Clerk.

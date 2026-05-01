@@ -175,7 +175,7 @@ function PlanCard({
                 className="w-full"
               >
                 <Heart size={16} weight="fill" />
-                Support Zawly Calendar
+                Support Zawly
               </Button>
             </CheckoutButton>
           </Show>
@@ -187,7 +187,7 @@ function PlanCard({
             className="w-full"
           >
             <Heart size={16} weight="fill" />
-            Support Zawly Calendar
+            Support Zawly
           </Button>
         )}
       </div>
@@ -226,7 +226,7 @@ export function CustomPricingTable() {
           priceFormatted,
           currencySymbol,
           description: plan.isDefault && !plan.description
-            ? "Thanks for being part of the Zawly Calendar community — we're glad you're here!"
+            ? "Thanks for being part of the Zawly community — we're glad you're here!"
             : plan.description,
           isDefault: plan.isDefault,
           isRecurring: plan.isRecurring,
@@ -283,7 +283,7 @@ export function CustomPricingTable() {
           price: 0,
           priceFormatted: "0",
           currencySymbol: "$",
-          description: "Thanks for being part of the Zawly Calendar community — we're glad you're here!",
+          description: "Thanks for being part of the Zawly community — we're glad you're here!",
           isDefault: true,
           isRecurring: false,
           period: null,
@@ -313,7 +313,7 @@ export function CustomPricingTable() {
 
   const handleSubscriptionComplete = () => {
     fetchData();
-    showToast("success", "Thank you for supporting Zawly Calendar! 💚");
+    showToast("success", "Thank you for supporting Zawly! 💚");
   };
 
   const handleCancel = async () => {

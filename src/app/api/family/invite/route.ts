@@ -218,7 +218,7 @@ export async function POST(request: NextRequest) {
       const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL}/invite?token=${token}`;
 
       await resend.emails.send({
-        from: process.env.FROM_EMAIL || "Zawly Calendar <invites@zawly.app>",
+        from: process.env.FROM_EMAIL || "Zawly <invites@zawly.app>",
         to: email.toLowerCase(),
         subject: `${inviterName} invited you to join ${family?.name || "their family"} on Zawly`,
         html: `

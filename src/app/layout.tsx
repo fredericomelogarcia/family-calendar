@@ -25,8 +25,8 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Zawly Calendar",
-  description: "A warm, mobile-first family calendar that keeps your household in sync.",
+  title: "Zawly",
+  description: "A warm, mobile-first family workspace for calendars and household expenses.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,

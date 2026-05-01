@@ -25,6 +25,7 @@ import {
   Users,
   Heart,
   Globe,
+  Tag,
 } from "@phosphor-icons/react";
 
 const COUNTRIES = [
@@ -65,6 +66,7 @@ import { showToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 import { CustomPricingTable } from "@/components/support/pricing-table";
 import { ContactFormButton } from "@/components/support/contact-form-button";
+import { BudgetCategorySettings } from "@/components/expenses/budget-category-settings";
 
 const MAX_FAMILY_MEMBERS = 6;
 
@@ -117,11 +119,12 @@ export default function SettingsPage() {
   const [members, setMembers] = useState<FamilyMember[]>([]);
   const [currentUserRole, setCurrentUserRole] = useState<string>("member");
   const [copied, setCopied] = useState(false);
-  const [activeTab, setActiveTab] = useState<"profile" | "family" | "support">("profile");
+  const [activeTab, setActiveTab] = useState<"profile" | "family" | "categories" | "support">("profile");
 
   const tabs = [
     { id: "profile" as const, label: "Profile", icon: User },
     { id: "family" as const, label: "Family", icon: Users },
+    { id: "categories" as const, label: "Categories", icon: Tag },
     { id: "support" as const, label: "Support", icon: Heart },
   ];
 
@@ -912,14 +915,21 @@ export default function SettingsPage() {
           </div>
         )}
 
+        {/* CATEGORIES TAB */}
+        {activeTab === "categories" && (
+          <div className="space-y-6">
+            <BudgetCategorySettings />
+          </div>
+        )}
+
         {/* SUPPORT TAB */}
         {activeTab === "support" && (
           <div className="space-y-6">
             <section>
               <div className="bg-surface rounded-[--radius-md] border border-border p-6 md:p-8 space-y-6">
                 <div className="text-center space-y-2">
-                  <h3 className="text-xl font-bold text-text-primary font-[family-name:var(--font-heading)]">Support Zawly Calendar</h3>
-                  <p className="text-text-secondary">Zawly Calendar is and will always be free for everyone. If you find it helpful and want to support the continuous development, you can do so below.</p>
+                  <h3 className="text-xl font-bold text-text-primary font-[family-name:var(--font-heading)]">Support Zawly</h3>
+                  <p className="text-text-secondary">Zawly is and will always be free for everyone. If you find it helpful and want to support the continuous development, you can do so below.</p>
                 </div>
                 <div className="flex justify-center"><CustomPricingTable /></div>
                 <p className="text-xs text-text-tertiary text-center">The support plan is completely optional and does not unlock extra features, but it is greatly appreciated!</p>

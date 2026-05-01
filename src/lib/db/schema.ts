@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, boolean, jsonb, index, varchar } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, boolean, jsonb, index, varchar, numeric, date } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
 // Families table
@@ -116,6 +116,133 @@ export const eventsRelations = relations(events, ({ one }) => ({
   }),
 }));
 
+// ============ EXPENSES & BUDGET ============
+
+// Categories (expense categories with optional budgets)
+export const categories = pgTable("categories", {
+  id: text("id").primaryKey(),
+  familyId: text("family_id")
+    .notNull()
+    .references(() => families.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  color: varchar("color", { length: 7 }),
+  icon: varchar("icon", { length: 50 }),
+  budgetAmount: numeric("budget_amount"),
+  budgetPeriod: varchar("budget_period", { length: 20 }).default("monthly"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  index("idx_categories_family_id").on(table.familyId),
+]);
+
+// Expenses (outgoing costs)
+export const expenses = pgTable("expenses", {
+  id: text("id").primaryKey(),
+  familyId: text("family_id")
+    .notNull()
+    .references(() => families.id, { onDelete: "cascade" }),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id),
+  categoryId: text("category_id").references(() => categories.id),
+  amount: numeric("amount").notNull(),
+  description: text("description"),
+  date: date("date").notNull(),
+  period: varchar("period", { enum: ["one-time", "weekly", "monthly", "yearly"] }).default("monthly"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  index("idx_expenses_family_id").on(table.familyId),
+  index("idx_expenses_user_id").on(table.userId),
+  index("idx_expenses_category_id").on(table.categoryId),
+  index("idx_expenses_date").on(table.date),
+]);
+
+// Income (incoming money)
+export const income = pgTable("income", {
+  id: text("id").primaryKey(),
+  familyId: text("family_id")
+    .notNull()
+    .references(() => families.id, { onDelete: "cascade" }),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id),
+  source: text("source").notNull(),
+  amount: numeric("amount").notNull(),
+  date: date("date").notNull(),
+  period: varchar("period", { enum: ["one-time", "weekly", "monthly", "yearly"] }).default("monthly"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  index("idx_income_family_id").on(table.familyId),
+  index("idx_income_user_id").on(table.userId),
+  index("idx_income_date").on(table.date),
+]);
+
+// Allocations (how leftover is allocated per period)
+export const allocations = pgTable("allocations", {
+  id: text("id").primaryKey(),
+  familyId: text("family_id")
+    .notNull()
+    .references(() => families.id, { onDelete: "cascade" }),
+  categoryId: text("category_id")
+    .notNull()
+    .references(() => categories.id, { onDelete: "cascade" }),
+  amount: numeric("amount").notNull(),
+  period: varchar("period", { length: 7 }).notNull(), // "2026-05" format
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  index("idx_allocations_family_id").on(table.familyId),
+  index("idx_allocations_period").on(table.familyId, table.period),
+]);
+
+// Relations
+export const categoriesRelations = relations(categories, ({ one, many }) => ({
+  family: one(families, {
+    fields: [categories.familyId],
+    references: [families.id],
+  }),
+  expenses: many(expenses),
+  allocations: many(allocations),
+}));
+
+export const expensesRelations = relations(expenses, ({ one }) => ({
+  family: one(families, {
+    fields: [expenses.familyId],
+    references: [families.id],
+  }),
+  user: one(users, {
+    fields: [expenses.userId],
+    references: [users.id],
+  }),
+  category: one(categories, {
+    fields: [expenses.categoryId],
+    references: [categories.id],
+  }),
+}));
+
+export const incomeRelations = relations(income, ({ one }) => ({
+  family: one(families, {
+    fields: [income.familyId],
+    references: [families.id],
+  }),
+  user: one(users, {
+    fields: [income.userId],
+    references: [users.id],
+  }),
+}));
+
+export const allocationsRelations = relations(allocations, ({ one }) => ({
+  family: one(families, {
+    fields: [allocations.familyId],
+    references: [families.id],
+  }),
+  category: one(categories, {
+    fields: [allocations.categoryId],
+    references: [categories.id],
+  }),
+}));
+
 // Types
 export type Family = typeof families.$inferSelect;
 export type NewFamily = typeof families.$inferInsert;
@@ -125,3 +252,11 @@ export type Event = typeof events.$inferSelect;
 export type NewEvent = typeof events.$inferInsert;
 export type Invitation = typeof invitations.$inferSelect;
 export type NewInvitation = typeof invitations.$inferInsert;
+export type Category = typeof categories.$inferSelect;
+export type NewCategory = typeof categories.$inferInsert;
+export type Expense = typeof expenses.$inferSelect;
+export type NewExpense = typeof expenses.$inferInsert;
+export type Income = typeof income.$inferSelect;
+export type NewIncome = typeof income.$inferInsert;
+export type Allocation = typeof allocations.$inferSelect;
+export type NewAllocation = typeof allocations.$inferInsert;

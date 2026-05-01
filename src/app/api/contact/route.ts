@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
 
     const fromAddress =
       process.env.CONTACT_FROM_EMAIL ||
-      "Zawly Calendar <noreply@zawly.app>";
+      "Zawly <noreply@zawly.app>";
 
     const { data, error } = await resend.emails.send({
       from: fromAddress,
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
           </div>
 
           <p style="text-align: center; color: #A09A94; font-size: 12px; margin-top: 16px;">
-            Sent from the Zawly Calendar Support page
+            Sent from the Zawly Support page
           </p>
         </div>
       `,

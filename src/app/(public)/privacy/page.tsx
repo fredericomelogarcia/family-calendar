@@ -1,8 +1,8 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "Privacy Policy — Zawly Calendar",
-  description: "Privacy policy for Zawly Calendar, the free family calendar app. Learn how we collect, use, and protect your data.",
+  title: "Privacy Policy — Zawly",
+  description: "Privacy policy for Zawly, the free family calendar and household expenses app. Learn how we collect, use, and protect your data.",
 };
 
 export default function PrivacyPage() {
@@ -13,13 +13,13 @@ export default function PrivacyPage() {
           Privacy Policy
         </h1>
         <p className="text-sm text-text-tertiary mb-10">
-          Last updated: June 2025
+          Last updated: April 2026
         </p>
 
         <div className="space-y-8 text-text-secondary leading-relaxed">
           <section>
             <p className="italic">
-              We built Zawly Calendar for our own families, so we understand how important it is that your personal
+              We built Zawly for our own families, so we understand how important it is that your personal
               information is handled with care. This policy explains what data we collect, why we collect it,
               how we use it, and the choices you have.
             </p>
@@ -36,9 +36,17 @@ export default function PrivacyPage() {
 
             <h3 className="font-semibold text-text-primary mt-4 mb-2">Calendar Data</h3>
             <p>
-              The events you create — including titles, dates, times, recurrence rules, notes,
-              and assigned family members — are stored on our servers so they can be shared within your family
-              group. This is the core data that makes Zawly Calendar work.
+              The events you create — including titles, dates, times, recurrence rules, and notes —
+              are stored on our servers so they can be shared within your family
+              group.
+            </p>
+
+            <h3 className="font-semibold text-text-primary mt-4 mb-2">Expense &amp; Budget Data</h3>
+            <p>
+              If you use Expenses, we store household income entries, expense entries, descriptions, amounts,
+              dates, repeat periods, categories, and category colours so your family can view
+              and manage shared spending. You should avoid entering bank account numbers, card numbers,
+              tax identifiers, or other highly sensitive financial details in free-text fields.
             </p>
 
             <h3 className="font-semibold text-text-primary mt-4 mb-2">Family Group Data</h3>
@@ -50,14 +58,14 @@ export default function PrivacyPage() {
             <h3 className="font-semibold text-text-primary mt-4 mb-2">Usage Data</h3>
             <p>
               We collect anonymous, aggregated analytics — such as page views and feature usage patterns —
-              to understand how Zawly Calendar is used and to improve the product. This data cannot be traced back
+              to understand how Zawly is used and to improve the product. This data cannot be traced back
               to individual users.
             </p>
 
             <h3 className="font-semibold text-text-primary mt-4 mb-2">Device Information</h3>
             <p>
               We may collect standard technical information such as browser type, operating system, and
-              screen resolution. This helps us ensure Zawly Calendar works well across different devices and
+              screen resolution. This helps us ensure Zawly works well across different devices and
               browsers.
             </p>
           </section>
@@ -66,9 +74,9 @@ export default function PrivacyPage() {
             <h2 className="text-lg font-bold text-text-primary mb-3">2. How We Use Your Information</h2>
             <p>We use the information we collect to:</p>
             <ul className="list-disc list-inside mt-2 space-y-1">
-              <li>Provide, maintain, and improve the Zawly Calendar service</li>
+              <li>Provide, maintain, and improve the Zawly service</li>
               <li>Create and manage your account and family group</li>
-              <li>Share calendar events with your family members, as intended</li>
+              <li>Share calendar events and household expense information with your family members, as intended</li>
               <li>Communicate with you about your account or service updates</li>
               <li>Monitor for abuse, security issues, and policy violations</li>
               <li>Improve user experience through anonymized analytics</li>
@@ -83,11 +91,11 @@ export default function PrivacyPage() {
             </p>
             <ul className="list-disc list-inside mt-2 space-y-1">
               <li>
-                <strong>Within your family group:</strong> Calendar events and your name are visible to
-                other members of your family group. This is a core feature of Zawly Calendar.
+                <strong>Within your family group:</strong> Calendar events, household expense information, and your name are visible to
+                other members of your family group. This is a core feature of Zawly.
               </li>
               <li>
-                <strong>Service providers:</strong> We rely on trusted third-party services to operate Zawly Calendar.
+                <strong>Service providers:</strong> We rely on trusted third-party services to operate Zawly.
                 These include Clerk (authentication), our cloud hosting provider (infrastructure), and
                 analytics tools. Each provider is contractually obligated to protect your data.
               </li>
@@ -110,17 +118,18 @@ export default function PrivacyPage() {
           <section>
             <h2 className="text-lg font-bold text-text-primary mb-3">5. Data Retention</h2>
             <p>
-              We retain your account information and calendar data for as long as your account is active.
+              We retain your account information, calendar data, and expense and budget data for as long as your account is active.
               If you delete your account, we will remove your personal data from our systems within a
-              reasonable timeframe. Events you created within a family group may remain accessible to
-              other members of that group even after your account is deleted.
+              reasonable timeframe. Events, income entries, expense entries, and categories you created
+              within a family group may remain accessible to other members of that group even
+              after your account is deleted.
             </p>
           </section>
 
           <section>
             <h2 className="text-lg font-bold text-text-primary mb-3">6. Cookies &amp; Local Storage</h2>
             <p>
-              Zawly Calendar uses essential cookies and local storage to keep you signed in and to store your
+              Zawly uses essential cookies and local storage to keep you signed in and to store your
               preferences (such as your theme preference). We do not use tracking cookies or
               advertising networks. Analytics are collected in an anonymized, privacy-respecting manner.
             </p>
@@ -133,7 +142,7 @@ export default function PrivacyPage() {
               <li><strong>Access</strong> — Request a copy of the personal data we hold about you</li>
               <li><strong>Correction</strong> — Update or correct your account information at any time through Settings</li>
               <li><strong>Deletion</strong> — Request that we delete your account and associated data</li>
-              <li><strong>Portability</strong> — Request an export of your calendar data</li>
+              <li><strong>Portability</strong> — Request an export of your calendar and expense data</li>
               <li><strong>Objection</strong> — Object to processing of your data for specific purposes</li>
             </ul>
             <p className="mt-3">
@@ -145,9 +154,9 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-bold text-text-primary mb-3">8. Children's Privacy</h2>
+            <h2 className="text-lg font-bold text-text-primary mb-3">8. Children&apos;s Privacy</h2>
             <p>
-              Zawly Calendar is designed for family use, but users must be at least 13 years old to create an
+              Zawly is designed for family use, but users must be at least 13 years old to create an
               account. We do not knowingly collect personal information from children under 13. If we
               learn that we have collected data from a child under 13, we will take steps to delete
               that information promptly.
@@ -157,9 +166,9 @@ export default function PrivacyPage() {
           <section>
             <h2 className="text-lg font-bold text-text-primary mb-3">9. International Users</h2>
             <p>
-              Zawly Calendar is operated from the United States. If you access the Service from outside the US,
+              Zawly is operated from the United States. If you access the Service from outside the US,
               please be aware that your information may be transferred to, stored, and processed on
-              servers located in the United States. By using Zawly Calendar, you consent to this transfer.
+              servers located in the United States. By using Zawly, you consent to this transfer.
             </p>
           </section>
 
@@ -186,7 +195,7 @@ export default function PrivacyPage() {
 
         <div className="mt-12 pt-8 border-t border-border">
           <Link href="/" className="text-primary hover:underline text-sm">
-            ← Back to Zawly Calendar
+            ← Back to Zawly
           </Link>
         </div>
       </article>

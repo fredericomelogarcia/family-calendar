@@ -11,7 +11,7 @@ const navItems = [
   { href: "/dashboard", icon: House, label: "Home" },
   { href: "/calendar", icon: CalendarBlank, label: "Calendar" },
   { href: "/events/new", icon: Plus, label: "Add", isSpecial: true },
-  { href: "/expenses", icon: Wallet, label: "Expenses" },
+  { href: "/expenses", icon: Wallet, label: "Budget" },
   { href: "/settings", icon: Gear, label: "Settings" },
 ];
 

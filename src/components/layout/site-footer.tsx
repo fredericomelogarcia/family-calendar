@@ -5,7 +5,7 @@ export function SiteFooter() {
     <footer className="shrink-0 px-6 py-12 border-t border-border bg-surface-alt/50">
       <div className="max-w-5xl mx-auto flex flex-col items-center gap-3">
         <p className="text-sm text-text-tertiary">
-          &copy; {new Date().getFullYear()} Zawly Calendar
+          &copy; {new Date().getFullYear()} Zawly
         </p>
         <p className="text-sm text-text-tertiary">
           Built with ❤️ for families everywhere.

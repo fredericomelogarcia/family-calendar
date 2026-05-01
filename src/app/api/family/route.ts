@@ -167,7 +167,7 @@ export async function POST(request: NextRequest) {
             const inviterName = inviter.fullName || inviter.username || "Someone";
 
             await resend.emails.send({
-              from: process.env.FROM_EMAIL || "Zawly Calendar <invites@zawly.app>",
+              from: process.env.FROM_EMAIL || "Zawly <invites@zawly.app>",
               to: email.toLowerCase(),
               subject: `${inviterName} invited you to join ${familyName} on Zawly`,
               html: `
